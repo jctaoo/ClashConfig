@@ -1,45 +1,33 @@
-# Dependencies
+# prod
+dist/
+
+# dev
+.yarn/
+!.yarn/releases
+.vscode/*
+!.vscode/launch.json
+!.vscode/*.code-snippets
+.idea/workspace.xml
+.idea/usage.statistics.xml
+.idea/shelf
+
+# deps
 node_modules/
+.wrangler
 
-# Lock files (uncomment if you want to ignore)
-# bun.lock
-# package-lock.json
-# yarn.lock
-
-# Environment variables
+# env
 .env
-.env.local
-.env.*.local
+.env.production
+.dev.vars
 
-# IDE/Editor
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-.DS_Store
-
-# Logs
+# logs
 logs/
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
 
-# Build output
-dist/
-build/
-*.tsbuildinfo
-
-# Testing
-coverage/
-
-# OS
-Thumbs.db
+# misc
 .DS_Store
-
-# Temporary files
-*.tmp
-*.temp
-.cache/
-

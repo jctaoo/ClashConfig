@@ -1,5 +1,16 @@
 {
+  "name": "clash-config",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy --minify",
+    "cf-typegen": "wrangler types --env-interface CloudflareBindings"
+  },
   "dependencies": {
+    "hono": "^4.9.9",
     "yaml": "^2.8.1"
+  },
+  "devDependencies": {
+    "wrangler": "^4.4.0"
   }
 }
