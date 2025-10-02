@@ -18,3 +18,6 @@
 - 使用 clashx.meta, 添加机场配置
 - 可以为订阅设置自动更新，24小时更新一次
 - 使用 apply.js 更新脚本
+- ClashX.meta 更多设置, 点击 Meta，配置 DNS 为 `192.18.0.2`, 查看 https://github.com/MetaCubeX/ClashX.Meta/issues/103
+
+![clashx-meta](./clashx-meta.png)
