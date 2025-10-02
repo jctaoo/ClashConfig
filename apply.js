@@ -86,4 +86,5 @@ if (process.platform === "darwin") {
   fs.writeFileSync(profileFile, resultContent);
 
   console.log("✅ 更新完成");
+  process.exit(0);
 }
