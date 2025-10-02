@@ -12,7 +12,7 @@ if (process.platform === "win32") {
 
   const clashVergeDir = path.join(
     appdataDir,
-    "io.github.clash-verge-rev.clash-verge-rev"
+    "io.github.clash-verge-rev.clash-verge-rev",
   );
 
   if (!fs.existsSync(clashVergeDir)) {
@@ -48,6 +48,17 @@ if (process.platform === "darwin") {
   // get PROFILE from argv
   if (process.argv.length < 3) {
     console.error("📖 用法: update.js <配置文件名>");
+
+    // list all config files
+    const files = fs.readdirSync(clashDir);
+    const profiles = files
+      .filter((file) => file.endsWith(".yaml"))
+      .map((file) => path.basename(file, ".yaml"));
+    console.log("📄 可用的配置文件:");
+    profiles.forEach((profile) => {
+      console.log(` - ${profile}`);
+    });
+
     process.exit(1);
   }
   const profileName = process.argv[2];
