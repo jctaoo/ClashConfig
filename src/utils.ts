@@ -1,0 +1,31 @@
+
+/**
+ * strictly check userAgent is clash
+ * - DEMO: stash on iOS: Stash/3.1.1 Clash/1.9.0
+ * - DEMO: clash verge rev on Windows: clash-verge/v2.4.2
+ * - DEMO: ClashX.meta on Mac: ClashX Meta/v1.4.24 (com.metacubex.ClashX.meta; build:622; macOS 26.0.0) Alamofire/5.10.2
+ * @param userAgent
+ * @returns
+ */
+export function checkUserAgent(userAgent: string) {
+  if (!userAgent) {
+    return false;
+  }
+
+  // check stash
+  if (userAgent.toLocaleLowerCase().startsWith("stash/")) {
+    return true;
+  }
+
+  // check clash verge rev
+  if (userAgent.toLocaleLowerCase().startsWith("clash-verge/")) {
+    return true;
+  }
+
+  // check clashx.meta
+  if (userAgent.toLocaleLowerCase().startsWith("clashx.meta/")) {
+    return true;
+  }
+
+  return false;
+}
