@@ -35,7 +35,11 @@ app.get("/sub", async (c) => {
     let contentFinal = content;
 
     if (!disableConvert) {
-      contentFinal = convertSub(content, subHeaders.fileName ?? "Clash-Config-Sub", userAgent!);
+      contentFinal = convertSub(
+        content,
+        subHeaders.fileName ?? "Clash-Config-Sub",
+        userAgent!
+      );
       console.log("Converted config");
     }
 
@@ -48,12 +52,16 @@ app.get("/sub", async (c) => {
       const msg = `Upstream error: ${error.message}`;
       return c.text(msg, 502);
     }
+    if (error instanceof Error) {
+      c.status(500);
+      return c.text(`Internal server error: ${error.message}`);
+    }
     c.status(500);
-    return c.text("Internal server error");
+    return c.text(`Internal server error`);
   }
 });
 
-export default { 
-  port: 8787, 
-  fetch: app.fetch, 
-} 
+export default {
+  port: 8787,
+  fetch: app.fetch,
+};

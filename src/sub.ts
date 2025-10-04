@@ -46,7 +46,9 @@ export function parseSubHeaders(response: Response): SubHeaders {
   // Example: attachment; filename*=UTF-8''config%20file.yaml
   if (subHeaders.contentDisposition) {
     // Try filename* first (RFC 5987 - encoded filename)
-    const filenameStarMatch = subHeaders.contentDisposition.match(/filename\*=([^;']+'')?([^;\n]*)/i);
+    const filenameStarMatch = subHeaders.contentDisposition.match(
+      /filename\*=([^;']+'')?([^;\n]*)/i
+    );
     if (filenameStarMatch && filenameStarMatch[2]) {
       try {
         // Decode the URL-encoded filename
@@ -57,10 +59,11 @@ export function parseSubHeaders(response: Response): SubHeaders {
       }
     } else {
       // Fall back to regular filename parameter
-      const filenameMatch = subHeaders.contentDisposition.match(/filename=([^;\n]*)/i);
+      const filenameMatch =
+        subHeaders.contentDisposition.match(/filename=([^;\n]*)/i);
       if (filenameMatch && filenameMatch[1]) {
         // Remove quotes if present
-        result.fileName = filenameMatch[1].replace(/^["']|["']$/g, '').trim();
+        result.fileName = filenameMatch[1].replace(/^["']|["']$/g, "").trim();
       }
     }
   }
@@ -78,24 +81,24 @@ export function parseSubHeaders(response: Response): SubHeaders {
   // Example: upload=0; download=123456789; total=1073741824; expire=1696377600
   if (subHeaders.subscriptionUserInfo) {
     const userInfo = subHeaders.subscriptionUserInfo;
-    
+
     // Parse usage information (convert bytes to MiB)
     const uploadMatch = userInfo.match(/upload=(\d+)/);
     const downloadMatch = userInfo.match(/download=(\d+)/);
     const totalMatch = userInfo.match(/total=(\d+)/);
-    
+
     if (totalMatch) {
       const totalBytes = parseInt(totalMatch[1], 10);
       const uploadBytes = uploadMatch ? parseInt(uploadMatch[1], 10) : 0;
       const downloadBytes = downloadMatch ? parseInt(downloadMatch[1], 10) : 0;
       const usedBytes = uploadBytes + downloadBytes;
-      
+
       result.usage = {
         totalMiB: Math.round(totalBytes / 1024 / 1024),
         usedMiB: Math.round(usedBytes / 1024 / 1024),
       };
     }
-    
+
     // Parse expire time (Unix timestamp in seconds)
     const expireMatch = userInfo.match(/expire=(\d+)/);
     if (expireMatch) {
@@ -114,7 +117,10 @@ export function parseSubHeaders(response: Response): SubHeaders {
  * @param subUrl
  * @param userAgent
  */
-export async function getSubContent(subUrl: string, userAgent: string): Promise<[string, SubHeaders]> {
+export async function getSubContent(
+  subUrl: string,
+  userAgent: string
+): Promise<[string, SubHeaders]> {
   const controller = new AbortController();
   const t = setTimeout(() => controller.abort(), 10000); // 10 seconds
 
@@ -124,6 +130,8 @@ export async function getSubContent(subUrl: string, userAgent: string): Promise<
       redirect: "follow",
       headers: {
         "User-Agent": userAgent,
+        // no cache content
+        "Cache-Control": "no-cache",
       },
       signal: controller.signal,
     });
@@ -141,6 +149,13 @@ export async function getSubContent(subUrl: string, userAgent: string): Promise<
       `Got subscription content with length ${text.length}`,
       subHeaders
     );
+
+    // check is yaml
+    // check first line is xxx: xxx
+    const firstLine = text.trim().split("\n")[0];
+    if (!firstLine.includes(":")) {
+      throw new Error("Upstream error: content is not yaml");
+    }
 
     return [text, subHeaders];
   } finally {
@@ -160,11 +175,19 @@ export function detectClashPremium(userAgent: string): boolean {
  * @param profile Profile name
  * @param userAgent User-Agent string
  */
-export function convertSub(yaml: string, profile: string, userAgent: string): string {
+export function convertSub(
+  yaml: string,
+  profile: string,
+  userAgent: string
+): string {
   const cfg = YAML.parse(yaml);
 
   const isPremium = detectClashPremium(userAgent);
-  const converted = convertClashConfig(cfg, profile, isPremium ? "stash" : "mihomo");
+  const converted = convertClashConfig(
+    cfg,
+    profile,
+    isPremium ? "stash" : "mihomo"
+  );
   const convertedYaml = YAML.stringify(converted);
 
   return convertedYaml;
