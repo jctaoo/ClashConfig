@@ -15,11 +15,13 @@ app.get("/sub", async (c) => {
   const convert = c.req.query("convert");
 
   if (userAgent && !checkUserAgent(userAgent)) {
+    console.log("Blocked request with User-Agent:", userAgent);
     c.status(400);
     return c.text("Not supported, must request inside clash app");
   }
 
   if (!subEncoded) {
+    console.log("Missing sub parameter");
     c.status(400);
     return c.text("sub is required");
   }
