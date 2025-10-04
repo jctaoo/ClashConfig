@@ -23,7 +23,7 @@ export function checkUserAgent(userAgent: string) {
   }
 
   // check clashx.meta
-  if (userAgent.toLocaleLowerCase().startsWith("clashx.meta/")) {
+  if (userAgent.toLocaleLowerCase().startsWith("clashx")) {
     return true;
   }
 
