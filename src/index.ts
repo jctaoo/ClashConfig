@@ -51,4 +51,7 @@ app.get("/sub", async (c) => {
   }
 });
 
-export default app;
+export default { 
+  port: 8787, 
+  fetch: app.fetch, 
+} 
