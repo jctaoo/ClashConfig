@@ -5,7 +5,8 @@ type ConfigVariant = "stash" | "mihomo";
 
 // 额外自定义规则
 const customRules: string[] = [
-  // "DOMAIN-SUFFIX,bing.com,🔰 模式选择",
+  // extra china site
+  "DOMAIN-SUFFIX,aihubmix.com,🇨🇳 国内网站",
 ];
 
 // prettier-ignore
