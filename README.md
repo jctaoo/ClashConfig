@@ -42,3 +42,7 @@ ENCODED_CONFIG_URL=$(python3 -c "import urllib.parse; print(urllib.parse.quote('
 URL_SCHEME="clash://install-config?url=$ENCODED_CONFIG_URL"
 open $URL_SCHEME
 ```
+
+### 📱 iOS
+
+获取并运行 [快捷指令](https://www.icloud.com/shortcuts/e3afa7a85e924aa3926e6ea6b686bc83) (mac 也可以用)
