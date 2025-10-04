@@ -1,13 +1,18 @@
 import { env } from "cloudflare:workers";
 import { Hono } from "hono";
-import { getSubContent, parseSubHeaders } from "./sub";
+import { convertSub, getSubContent, parseSubHeaders } from "./sub";
 import { checkUserAgent } from "./utils";
 
 const app = new Hono();
 
+/**
+ * - Parameter sub: base64 encoded sub url
+ * - Parameter convert: true/false, default true, whether to convert the config
+ */
 app.get("/sub", async (c) => {
   const userAgent = c.req.header("User-Agent");
   const subEncoded = c.req.query("sub");
+  const convert = c.req.query("convert");
 
   if (userAgent && !checkUserAgent(userAgent)) {
     c.status(400);
@@ -23,7 +28,19 @@ app.get("/sub", async (c) => {
 
   try {
     const [content, subHeaders] = await getSubContent(subUrl, userAgent!);
-    return c.text(content, 200, subHeaders.rawHeaders);
+
+    const disableConvert = convert === "false";
+    let contentFinal = content;
+
+    if (!disableConvert) {
+      contentFinal = convertSub(content, subHeaders.fileName ?? "Clash-Config-Sub", userAgent!);
+      console.log("Converted config");
+    }
+
+    return c.text(contentFinal, 200, {
+      ...subHeaders.rawHeaders,
+      "Content-Type": "text/yaml; charset=utf-8",
+    });
   } catch (error) {
     if (error instanceof DOMException && error.name === "AbortError") {
       const msg = `Upstream error: ${error.message}`;

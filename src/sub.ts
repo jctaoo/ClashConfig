@@ -1,3 +1,7 @@
+import { env } from "cloudflare:workers";
+import YAML from "yaml";
+import { convertClashConfig } from "./convert";
+
 /**
  * @see https://www.clashverge.dev/guide/url_schemes.html#_4
  */
@@ -142,4 +146,26 @@ export async function getSubContent(subUrl: string, userAgent: string): Promise<
   } finally {
     clearTimeout(t);
   }
+}
+
+/**
+ * 当前仅检测 stash，该内核不支持全部 mihomo 内核特性
+ */
+export function detectClashPremium(userAgent: string): boolean {
+  return userAgent.toLowerCase().startsWith("stash/");
+}
+
+/**
+ * @param yaml Subscription content
+ * @param profile Profile name
+ * @param userAgent User-Agent string
+ */
+export function convertSub(yaml: string, profile: string, userAgent: string): string {
+  const cfg = YAML.parse(yaml);
+
+  const isPremium = detectClashPremium(userAgent);
+  const converted = convertClashConfig(cfg, profile, isPremium ? "stash" : "mihomo");
+  const convertedYaml = YAML.stringify(converted);
+
+  return convertedYaml;
 }

@@ -2,8 +2,12 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "clash-config",
   "main": "src/index.ts",
-  "compatibility_date": "2025-10-02",
-  "workers_dev": false
+  "compatibility_date": "2025-10-01",
+  "workers_dev": false,
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  }
   // "compatibility_flags": [
   //   "nodejs_compat"
   // ],
