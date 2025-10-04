@@ -22,7 +22,7 @@
 $RawUrl = "https://your-raw-url";
 $SubUrl = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($RawUrl));
 $ConfigUrl = "https://clash.jctaoo.site/sub?sub=$SubUrl";
-$EncodedConfigUrl = [System.Web.HttpUtility]::UrlEncode($ConfigUrl);
+$EncodedConfigUrl = [System.Net.WebUtility]::UrlEncode($ConfigUrl)
 $UrlScheme = "clash://install-config?url=$EncodedConfigUrl";
 Start-Process $UrlScheme
 ```
