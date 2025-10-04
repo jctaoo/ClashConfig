@@ -1,6 +1,7 @@
 import { env } from "cloudflare:workers";
 import YAML from "yaml";
 import { convertClashConfig } from "./convert";
+import { extractGeoDomains } from "./geo/geoHelper";
 
 /**
  * @see https://www.clashverge.dev/guide/url_schemes.html#_4
@@ -46,9 +47,7 @@ export function parseSubHeaders(response: Response): SubHeaders {
   // Example: attachment; filename*=UTF-8''config%20file.yaml
   if (subHeaders.contentDisposition) {
     // Try filename* first (RFC 5987 - encoded filename)
-    const filenameStarMatch = subHeaders.contentDisposition.match(
-      /filename\*=([^;']+'')?([^;\n]*)/i
-    );
+    const filenameStarMatch = subHeaders.contentDisposition.match(/filename\*=([^;']+'')?([^;\n]*)/i);
     if (filenameStarMatch && filenameStarMatch[2]) {
       try {
         // Decode the URL-encoded filename
@@ -59,8 +58,7 @@ export function parseSubHeaders(response: Response): SubHeaders {
       }
     } else {
       // Fall back to regular filename parameter
-      const filenameMatch =
-        subHeaders.contentDisposition.match(/filename=([^;\n]*)/i);
+      const filenameMatch = subHeaders.contentDisposition.match(/filename=([^;\n]*)/i);
       if (filenameMatch && filenameMatch[1]) {
         // Remove quotes if present
         result.fileName = filenameMatch[1].replace(/^["']|["']$/g, "").trim();
@@ -117,10 +115,7 @@ export function parseSubHeaders(response: Response): SubHeaders {
  * @param subUrl
  * @param userAgent
  */
-export async function getSubContent(
-  subUrl: string,
-  userAgent: string
-): Promise<[string, SubHeaders]> {
+export async function getSubContent(subUrl: string, userAgent: string): Promise<[string, SubHeaders]> {
   const controller = new AbortController();
   const t = setTimeout(() => controller.abort(), 10000); // 10 seconds
 
@@ -137,18 +132,13 @@ export async function getSubContent(
     });
 
     if (!response.ok) {
-      throw new Error(
-        `Upstream error: ${response.status} ${response.statusText}`
-      );
+      throw new Error(`Upstream error: ${response.status} ${response.statusText}`);
     }
 
     const text = await response.text();
     const subHeaders = parseSubHeaders(response);
 
-    console.log(
-      `Got subscription content with length ${text.length}`,
-      subHeaders
-    );
+    console.log(`Got subscription content with length ${text.length}`, subHeaders);
 
     // check is yaml
     // check first line is xxx: xxx
@@ -175,19 +165,24 @@ export function detectClashPremium(userAgent: string): boolean {
  * @param profile Profile name
  * @param userAgent User-Agent string
  */
-export function convertSub(
-  yaml: string,
-  profile: string,
-  userAgent: string
-): string {
+export async function convertSub(yaml: string, profile: string, userAgent: string): Promise<string> {
   const cfg = YAML.parse(yaml);
 
   const isPremium = detectClashPremium(userAgent);
-  const converted = convertClashConfig(
-    cfg,
+  const extra: { fakeIpFilters?: string[] } = {};
+
+  // get fake-ip-filter for premium core
+  if (isPremium) {
+    const domainList = await extractGeoDomains(env.geosite, ["private", "connectivity-check"]);
+    extra.fakeIpFilters = domainList;
+  }
+
+  const converted = convertClashConfig({
+    config: cfg,
     profile,
-    isPremium ? "stash" : "mihomo"
-  );
+    variant: isPremium ? "stash" : "mihomo",
+    extra,
+  });
   const convertedYaml = YAML.stringify(converted);
 
   return convertedYaml;

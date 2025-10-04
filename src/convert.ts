@@ -42,10 +42,7 @@ function normalizeName(name: string): string {
   if (!name || typeof name !== "string") return "";
   // 删除 emoji（简单方式：剔除高位 unicode，这里做基本处理）
   // NOTE: 这不是 100% 完整的 emoji 移除，但对常见 emoji 有效
-  const noEmoji = name.replace(
-    /[\u{1F300}-\u{1F6FF}\u{1F900}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu,
-    ""
-  );
+  const noEmoji = name.replace(/[\u{1F300}-\u{1F6FF}\u{1F900}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, "");
   // 把特殊竖线/分隔符/中文标点换成空格，合并多空格，trim，转小写
   return noEmoji
     .replace(/[/｜丨\|·••—–_，,。:：\-]+/g, " ")
@@ -83,8 +80,9 @@ function generalConfig() {
 
 /**
  * @param {boolean} conservative 使用保守配置，默认不使用, 保守配置适用于 stash
+ * @param {string[]} extraFakeIpFilters 额外的 fake-ip-filter 条目
  */
-function dnsConfig(conservative = false) {
+function dnsConfig(conservative = false, extraFakeIpFilters: string[] = []) {
   // 默认 DNS, 用于解析 DNS 服务器 的域名
   const defaultDNS = ["tls://223.5.5.5"];
 
@@ -115,10 +113,13 @@ function dnsConfig(conservative = false) {
       "*",
       "+.lan",
       "+.local",
-      "geosite:connectivity-check",
-      "geosite:private",
+      // clash premium 不支持 geosite 配置
+      ...(conservative ? [] : ["geosite:connectivity-check", "geosite:private"]),
       // 额外: 微信快速登录检测失败 (private, 与 connectivity check 不包含)
       "localhost.work.weixin.qq.com",
+
+      // 额外
+      ...extraFakeIpFilters,
     ],
     "default-nameserver": [...defaultDNS],
     nameserver: conservative ? chinaDoH : foreignDNS,
@@ -212,23 +213,21 @@ function proxyGroups(proxies: AnyJson[], conservative = false) {
     }
   }
 
-  const regionBasedGroups = Object.entries(regionsToProxies).map(
-    ([regionId, proxies]) => {
-      const region = REGIONS.find((r) => r.id === regionId) ?? UNKNOWN_REGION;
-      const icon =
-        regionId === "unknown"
-          ? "https://fastly.jsdelivr.net/gh/clash-verge-rev/clash-verge-rev.github.io@main/docs/assets/icons/unknown.svg"
-          : `https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.3.2/flags/1x1/${region.id}.svg`;
+  const regionBasedGroups = Object.entries(regionsToProxies).map(([regionId, proxies]) => {
+    const region = REGIONS.find((r) => r.id === regionId) ?? UNKNOWN_REGION;
+    const icon =
+      regionId === "unknown"
+        ? "https://fastly.jsdelivr.net/gh/clash-verge-rev/clash-verge-rev.github.io@main/docs/assets/icons/unknown.svg"
+        : `https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.3.2/flags/1x1/${region.id}.svg`;
 
-      return {
-        ...groupBaseOption,
-        name: `${region.emoji} ${region.name}节点`,
-        type: "select",
-        proxies: proxies.map((proxy) => proxy.name),
-        icon: icon,
-      };
-    }
-  );
+    return {
+      ...groupBaseOption,
+      name: `${region.emoji} ${region.name}节点`,
+      type: "select",
+      proxies: proxies.map((proxy) => proxy.name),
+      icon: icon,
+    };
+  });
 
   // 排序 regionBasedGroups，按 alphabetically 排序，未知节点排在最后
   regionBasedGroups.sort((a, b) => {
@@ -293,114 +292,54 @@ function proxyGroups(proxies: AnyJson[], conservative = false) {
     },
 
     generateRuleBasedGroup("🌍 国外媒体", {
-      proxies: [
-        "🔰 模式选择",
-        "⚙️ 节点选择",
-        ...modeNames,
-        "🔗 全局直连",
-        ...regionGroupNames,
-      ],
+      proxies: ["🔰 模式选择", "⚙️ 节点选择", ...modeNames, "🔗 全局直连", ...regionGroupNames],
       icon: "https://fastly.jsdelivr.net/gh/clash-verge-rev/clash-verge-rev.github.io@main/docs/assets/icons/youtube.svg",
     }),
 
     generateRuleBasedGroup("💸 AI Services", {
-      proxies: [
-        "🔰 模式选择",
-        "⚙️ 节点选择",
-        ...modeNames,
-        "🔗 全局直连",
-        ...regionGroupNames,
-      ],
+      proxies: ["🔰 模式选择", "⚙️ 节点选择", ...modeNames, "🔗 全局直连", ...regionGroupNames],
       icon: "https://fastly.jsdelivr.net/gh/clash-verge-rev/clash-verge-rev.github.io@main/docs/assets/icons/chatgpt.svg",
     }),
 
     generateRuleBasedGroup("💸 Google AI Services", {
-      proxies: [
-        "🔰 模式选择",
-        "⚙️ 节点选择",
-        ...modeNames,
-        "🔗 全局直连",
-        ...regionGroupNames,
-      ],
+      proxies: ["🔰 模式选择", "⚙️ 节点选择", ...modeNames, "🔗 全局直连", ...regionGroupNames],
       icon: "https://fastly.jsdelivr.net/gh/clash-verge-rev/clash-verge-rev.github.io@main/docs/assets/icons/google.svg",
     }),
 
     generateRuleBasedGroup("🪙 Bybit", {
-      proxies: [
-        "🔰 模式选择",
-        "⚙️ 节点选择",
-        ...modeNames,
-        "🔗 全局直连",
-        ...regionGroupNames,
-      ],
+      proxies: ["🔰 模式选择", "⚙️ 节点选择", ...modeNames, "🔗 全局直连", ...regionGroupNames],
       icon: "https://fastly.jsdelivr.net/gh/clash-verge-rev/clash-verge-rev.github.io@main/docs/assets/icons/link.svg",
     }),
 
     generateRuleBasedGroup("🅿️ PikPak", {
-      proxies: [
-        "🔰 模式选择",
-        "⚙️ 节点选择",
-        ...modeNames,
-        "🔗 全局直连",
-        ...regionGroupNames,
-      ],
+      proxies: ["🔰 模式选择", "⚙️ 节点选择", ...modeNames, "🔗 全局直连", ...regionGroupNames],
       icon: "https://fastly.jsdelivr.net/gh/clash-verge-rev/clash-verge-rev.github.io@main/docs/assets/icons/link.svg",
     }),
 
     generateRuleBasedGroup("📲 电报消息", {
-      proxies: [
-        "🔰 模式选择",
-        "⚙️ 节点选择",
-        ...modeNames,
-        "🔗 全局直连",
-        ...regionGroupNames,
-      ],
+      proxies: ["🔰 模式选择", "⚙️ 节点选择", ...modeNames, "🔗 全局直连", ...regionGroupNames],
       icon: "https://fastly.jsdelivr.net/gh/clash-verge-rev/clash-verge-rev.github.io@main/docs/assets/icons/telegram.svg",
     }),
 
     generateRuleBasedGroup("📢 谷歌服务", {
-      proxies: [
-        "🔰 模式选择",
-        "⚙️ 节点选择",
-        ...modeNames,
-        "🔗 全局直连",
-        ...regionGroupNames,
-      ],
+      proxies: ["🔰 模式选择", "⚙️ 节点选择", ...modeNames, "🔗 全局直连", ...regionGroupNames],
       icon: "https://fastly.jsdelivr.net/gh/clash-verge-rev/clash-verge-rev.github.io@main/docs/assets/icons/google.svg",
     }),
 
     generateRuleBasedGroup("🍎 苹果服务", {
-      proxies: [
-        "🔰 模式选择",
-        "⚙️ 节点选择",
-        ...modeNames,
-        "🔗 全局直连",
-        ...regionGroupNames,
-      ],
+      proxies: ["🔰 模式选择", "⚙️ 节点选择", ...modeNames, "🔗 全局直连", ...regionGroupNames],
       icon: "https://fastly.jsdelivr.net/gh/clash-verge-rev/clash-verge-rev.github.io@main/docs/assets/icons/apple.svg",
     }),
 
     generateRuleBasedGroup("Ⓜ️ 微软服务", {
-      proxies: [
-        "🔰 模式选择",
-        "⚙️ 节点选择",
-        ...modeNames,
-        "🔗 全局直连",
-        ...regionGroupNames,
-      ],
+      proxies: ["🔰 模式选择", "⚙️ 节点选择", ...modeNames, "🔗 全局直连", ...regionGroupNames],
       icon: "https://fastly.jsdelivr.net/gh/clash-verge-rev/clash-verge-rev.github.io@main/docs/assets/icons/microsoft.svg",
     }),
     {
       ...groupBaseOption,
       name: "🇨🇳 国内网站",
       type: "select",
-      proxies: [
-        "🔗 全局直连",
-        "🔰 模式选择",
-        "⚙️ 节点选择",
-        ...modeNames,
-        ...regionGroupNames,
-      ],
+      proxies: ["🔗 全局直连", "🔰 模式选择", "⚙️ 节点选择", ...modeNames, ...regionGroupNames],
       icon: "https://fastly.jsdelivr.net/gh/lipis/flag-icons@7.3.2/flags/1x1/cn.svg",
     },
 
@@ -622,11 +561,16 @@ function rules() {
   };
 }
 
-export function convertClashConfig(
-  config: AnyJson,
-  profile: string,
-  variant: ConfigVariant = "mihomo"
-): AnyJson {
+export function convertClashConfig(options: {
+  config: AnyJson;
+  profile: string;
+  variant: ConfigVariant;
+  extra: {
+    fakeIpFilters?: string[];
+  };
+}): AnyJson {
+  const { config, profile, variant = "mihomo", extra } = options;
+
   const conservative = variant === "stash";
 
   // General Config

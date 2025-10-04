@@ -35,7 +35,7 @@ app.get("/sub", async (c) => {
     let contentFinal = content;
 
     if (!disableConvert) {
-      contentFinal = convertSub(
+      contentFinal = await convertSub(
         content,
         subHeaders.fileName ?? "Clash-Config-Sub",
         userAgent!
