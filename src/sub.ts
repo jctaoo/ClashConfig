@@ -167,7 +167,7 @@ export async function getSubContent(
  * 当前仅检测 stash，该内核不支持全部 mihomo 内核特性
  */
 export function detectClashPremium(userAgent: string): boolean {
-  return userAgent.toLowerCase().startsWith("clashx meta/");
+  return userAgent.toLowerCase().startsWith("stash/");
 }
 
 /**

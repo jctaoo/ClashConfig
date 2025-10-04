@@ -8,6 +8,12 @@
 - [ ] 5. 使用 token 和 kv 优化
 - [ ] 6. subrequest 被 cloudflare 缓存
 
+## 💻 Development
+
+1. Install Deps: `bun install`
+2. Generate fresh geo related scripts: `bun run pb-gen && bun run pb-gen-dts`
+3. Start dev server: `bun run dev`
+
 ## 🖥️ 使用方法
 
 - 获取机场订阅地址，进行 base64 转码

@@ -1,5 +1,7 @@
 // prettier-ignore
 
+import { env } from "cloudflare:workers";
+
 type AnyJson = Record<string, any>;
 type ConfigVariant = "stash" | "mihomo";
 
@@ -71,12 +73,10 @@ function generalConfig() {
     "geo-auto-update": true,
     "geo-update-interval": 24, // 更新间隔，单位为小时
     "geox-url": {
-      geoip:
-        "https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/geoip-lite.dat",
-      geosite:
-        "https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/geosite.dat",
-      mmdb: "https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/country-lite.mmdb",
-      asn: "https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/GeoLite2-ASN.mmdb",
+      geoip: env.geoip,
+      geosite: env.geosite,
+      mmdb: env.mmdb,
+      asn: env.asn,
     },
   };
 }
