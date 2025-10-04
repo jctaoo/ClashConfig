@@ -7,6 +7,7 @@
 - [ ] 3. 检查 https://github.com/DustinWin/ShellCrash/blob/dev/public/fake_ip_filter.list 以补全 fake-ip-filter
 - [ ] 4. stash 不支持 svg 图标
 - [ ] 5. 使用 token 和 kv 优化
+- [ ] 6. subrequest 被 cloudflare 缓存
 
 ## 🖥️ 使用方法
 
