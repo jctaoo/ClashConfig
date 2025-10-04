@@ -163,7 +163,7 @@ function replaceConfig(config: AnyJson, patch: AnyJson) {
   }
 }
 
-function proxyGroups(proxies: AnyJson[]) {
+function proxyGroups(proxies: AnyJson[], conservative = false) {
   // 代理组通用配置
   const groupBaseOption = {
     interval: 0,
@@ -429,6 +429,16 @@ function proxyGroups(proxies: AnyJson[]) {
     },
   ];
 
+  if (conservative) {
+    // 保守模式不要设置 svg icon
+    for (const group of proxyGroupsConfig) {
+      if ("icon" in group && group.icon.endsWith(".svg")) {
+        // @ts-expect-error
+        delete group.icon;
+      }
+    }
+  }
+
   return {
     "proxy-groups": proxyGroupsConfig,
   };
@@ -626,7 +636,7 @@ export function convertClashConfig(
 
   // Config Proxy Groups and rules
   replaceConfig(config, rules());
-  replaceConfig(config, proxyGroups(config["proxies"]));
+  replaceConfig(config, proxyGroups(config["proxies"], conservative));
 
   // remove hosts
   delete config["hosts"];
