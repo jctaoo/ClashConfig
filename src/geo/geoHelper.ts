@@ -8,9 +8,9 @@ const {
 
 /**
  * Extract geo domains from given geo site data url and filter by country codes
- * 
+ *
  * NOTE: This will filtered out the regex domain.
- * 
+ *
  * @param geoSiteUrl The URL of the geo site data
  * @param countryCodes The list of country codes to filter by
  * @returns A list of geo domains
@@ -35,6 +35,10 @@ export async function extractGeoDomains(geoSiteUrl: string, countryCodes: string
 
     return filteredDomain.map((d) => d.value).filter((d) => !!d);
   });
+
+  console.log(
+    `Extracted ${domainList.length} geo domains from ${geoSiteUrl} for countries: ${countryCodes.join(", ")}`
+  );
 
   return domainList as string[];
 }

@@ -577,7 +577,7 @@ export function convertClashConfig(options: {
   mergeConfig(config, generalConfig());
 
   // Config DNS
-  config.dns = dnsConfig(conservative);
+  config.dns = dnsConfig(conservative, extra.fakeIpFilters ?? []);
 
   // Config Proxy Groups and rules
   replaceConfig(config, rules());
