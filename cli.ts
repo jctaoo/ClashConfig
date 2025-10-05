@@ -468,7 +468,7 @@ yargs(hideBin(process.argv))
         return;
       }
       
-      console.log(`\n📋 Found ${keys.length} subscription(s):\n`);
+      console.log(`\n📋 Found ${keys.length} subscription(s):`);
       
       for (const key of keys) {
         try {
@@ -476,20 +476,13 @@ yargs(hideBin(process.argv))
           if (value) {
             try {
               const subInfo: ClashSubInformationCLI = JSON.parse(value);
-              console.log(`🔹 ${key.name}`);
-              console.log(`  🔑 Token:        ${subInfo.token}`);
-              console.log(`  🏷️  Label:        ${subInfo.label}`);
-              console.log(`  🔗 URL:          ${subInfo.url}`);
-              console.log(`  🎯 Filter Label: ${subInfo.filter.label}`);
-              console.log("");
+              logSubInfo(subInfo, key.name);
             } catch (parseError: any) {
-              console.error(`  ❌ Error parsing ${key.name}: Invalid JSON data`);
-              console.log("");
+              console.error(`\n❌ Error parsing ${key.name}: Invalid JSON data`);
             }
           }
         } catch (error: any) {
-          console.error(`  ❌ Error reading ${key.name}: ${error.message}`);
-          console.log("");
+          console.error(`\n❌ Error reading ${key.name}: ${error.message}`);
         }
       }
     }
