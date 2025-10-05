@@ -78,10 +78,12 @@ app.get(":token", async (c) => {
     const { content, headers, subInfo } = await getOrFetchSubContent(token, userAgent!);
     const contentFinal = await convertSub(content, subInfo.label, userAgent!, subInfo.filter);
 
-    // TODO: use subInfo.label as response header
+    // Use subInfo.label as the filename in Content-Disposition header
+    const contentDisposition = `attachment; filename*=UTF-8''${subInfo.label}`;
 
     return c.text(contentFinal, 200, {
       ...headers.rawHeaders,
+      "Content-Disposition": contentDisposition,
       "Content-Type": "text/yaml; charset=utf-8",
     });
   } catch (error) {
