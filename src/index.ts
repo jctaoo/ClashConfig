@@ -1,6 +1,6 @@
 import { env } from "cloudflare:workers";
 import { Hono } from "hono";
-import { convertSub, getOrFetchSubContent, getSubContent, parseSubHeaders } from "./sub";
+import { convertSub, getOrFetchSubContent, getSubContent, parseSubHeaders, TokenNotFoundError, JSONParseError } from "./sub";
 import { checkUserAgent } from "./utils";
 
 const app = new Hono();
@@ -72,11 +72,28 @@ app.get(":token", async (c) => {
     return c.text("Not supported, must request inside clash app");
   }
   
-  const { content, headers } = await getOrFetchSubContent(token, userAgent!);
-  return c.text(content, 200, {
-    ...headers.rawHeaders,
-    "Content-Type": "text/yaml; charset=utf-8",
-  });
+  try {
+    const { content, headers } = await getOrFetchSubContent(token, userAgent!);
+    return c.text(content, 200, {
+      ...headers.rawHeaders,
+      "Content-Type": "text/yaml; charset=utf-8",
+    });
+  } catch (error) {
+    // Token not found or JSON parse error should return 400
+    if (error instanceof TokenNotFoundError || error instanceof JSONParseError) {
+      console.log(`Bad request: ${error.message}`);
+      c.status(400);
+      return c.text(error.message);
+    }
+    
+    // Other errors return 500
+    if (error instanceof Error) {
+      c.status(500);
+      return c.text(`Internal server error: ${error.message}`);
+    }
+    c.status(500);
+    return c.text(`Internal server error`);
+  }
 })
 
 export default {

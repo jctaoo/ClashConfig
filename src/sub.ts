@@ -3,6 +3,26 @@ import YAML from "yaml";
 import { convertClashConfig } from "./convert";
 import { extractGeoDomains } from "./geo/geoHelper";
 
+/**
+ * 自定义错误类：Token 未找到
+ */
+export class TokenNotFoundError extends Error {
+  constructor(token: string) {
+    super(`Subscription not found for token: ${token}`);
+    this.name = "TokenNotFoundError";
+  }
+}
+
+/**
+ * 自定义错误类：JSON 解析失败
+ */
+export class JSONParseError extends Error {
+  constructor(message: string) {
+    super(`Failed to parse subscription data: ${message}`);
+    this.name = "JSONParseError";
+  }
+}
+
 export interface ClashSubInformation {
   /** 用户 Token */
   token: string;
@@ -245,14 +265,14 @@ export async function fetchAndCacheSubContent(
   // 1. 从 KV 中获取订阅配置
   const subInfoStr = await env.KV.get(kvKey);
   if (!subInfoStr) {
-    throw new Error(`Subscription not found for token: ${token}`);
+    throw new TokenNotFoundError(token);
   }
 
   let subInfo: ClashSubInformation;
   try {
     subInfo = JSON.parse(subInfoStr);
   } catch (error) {
-    throw new Error(`Failed to parse subscription data: ${error instanceof Error ? error.message : "Unknown error"}`);
+    throw new JSONParseError(error instanceof Error ? error.message : "Unknown error");
   }
 
   // 2. 获取订阅内容
