@@ -10,8 +10,6 @@ export interface ClashSubInformation {
   label: string;
   /** 订阅 URL */
   url: string;
-  /** clash 配置内容，缓存时效 */
-  content: string;
   
   filter: {
     label: string;
@@ -22,6 +20,13 @@ export interface ClashSubInformation {
     /** 排除正则 */
     excludeRegex?: string;
   }
+}
+
+export interface CachedSubContent {
+  /** 订阅内容 */
+  content: string;
+  /** 订阅 Headers */
+  headers: SubHeaders;
 }
 
 /**
@@ -207,4 +212,99 @@ export async function convertSub(yaml: string, profile: string, userAgent: strin
   const convertedYaml = YAML.stringify(converted);
 
   return convertedYaml;
+}
+
+/**
+ * Hash token with SHA256 using Web Crypto API
+ */
+async function hashToken(token: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(token);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const hashHex = hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+  return hashHex;
+}
+
+/**
+ * 从 KV 中根据 token 获取订阅信息，获取订阅内容并缓存到 KV
+ * @param token 用户 token (sk-xxxx 格式)
+ * @param userAgent User-Agent 字符串
+ * @param cacheTTL 缓存 TTL（秒），默认 1 小时
+ * @returns 订阅内容和 headers
+ */
+export async function fetchAndCacheSubContent(
+  token: string, 
+  userAgent: string, 
+  cacheTTL: number = 3600
+): Promise<CachedSubContent> {
+  const hashedToken = await hashToken(token);
+  const kvKey = `kv:${hashedToken}`;
+  const cacheKey = `sub:${hashedToken}`;
+
+  // 1. 从 KV 中获取订阅配置
+  const subInfoStr = await env.KV.get(kvKey);
+  if (!subInfoStr) {
+    throw new Error(`Subscription not found for token: ${token}`);
+  }
+
+  let subInfo: ClashSubInformation;
+  try {
+    subInfo = JSON.parse(subInfoStr);
+  } catch (error) {
+    throw new Error(`Failed to parse subscription data: ${error instanceof Error ? error.message : "Unknown error"}`);
+  }
+
+  // 2. 获取订阅内容
+  console.log(`Fetching subscription from: ${subInfo.url}`);
+  const [content, headers] = await getSubContent(subInfo.url, userAgent);
+
+  // 3. 缓存到 KV，将 cachedAt 保存到 metadata
+  const cachedData: CachedSubContent = {
+    content,
+    headers,
+  };
+
+  const cachedAt = Date.now();
+  await env.KV.put(cacheKey, JSON.stringify(cachedData), {
+    expirationTtl: cacheTTL,
+    metadata: { cachedAt },
+  });
+
+  console.log(`Cached subscription content to ${cacheKey} with TTL ${cacheTTL}s at ${new Date(cachedAt).toISOString()}`);
+
+  return cachedData;
+}
+
+/**
+ * 从 KV 缓存中获取订阅内容，如果不存在则从源获取并缓存
+ * @param token 用户 token (sk-xxxx 格式)
+ * @param userAgent User-Agent 字符串
+ * @param cacheTTL 缓存 TTL（秒），默认 1 小时
+ * @returns 订阅内容和 headers
+ */
+export async function getOrFetchSubContent(
+  token: string,
+  userAgent: string,
+  cacheTTL: number = 3600
+): Promise<CachedSubContent> {
+  const hashedToken = await hashToken(token);
+  const cacheKey = `sub:${hashedToken}`;
+
+  // 尝试从缓存获取，同时获取 metadata
+  const kvValue = await env.KV.getWithMetadata<{ cachedAt?: number }>(cacheKey);
+  if (kvValue.value) {
+    try {
+      const cached = JSON.parse(kvValue.value) as CachedSubContent;
+      const cachedAt = kvValue.metadata?.cachedAt;
+      const cachedAtStr = cachedAt ? ` (cached at ${new Date(cachedAt).toISOString()})` : '';
+      console.log(`Using cached subscription content from ${cacheKey}${cachedAtStr}`);
+      return cached;
+    } catch (error) {
+      console.warn(`Failed to parse cached data, fetching fresh content: ${error}`);
+    }
+  }
+
+  // 缓存不存在或解析失败，重新获取
+  return await fetchAndCacheSubContent(token, userAgent, cacheTTL);
 }

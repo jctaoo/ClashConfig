@@ -1,11 +1,12 @@
 import { env } from "cloudflare:workers";
 import { Hono } from "hono";
-import { convertSub, getSubContent, parseSubHeaders } from "./sub";
+import { convertSub, getOrFetchSubContent, getSubContent, parseSubHeaders } from "./sub";
 import { checkUserAgent } from "./utils";
 
 const app = new Hono();
 
 /**
+ * Basic clash config converter
  * - Parameter sub: base64 encoded sub url
  * - Parameter convert: true/false, default true, whether to convert the config
  */
@@ -60,6 +61,23 @@ app.get("/sub", async (c) => {
     return c.text(`Internal server error`);
   }
 });
+
+app.get(":token", async (c) => {
+  const token = c.req.param("token");
+  const userAgent = c.req.header("User-Agent");
+
+  if (userAgent && !checkUserAgent(userAgent)) {
+    console.log("Blocked request with User-Agent:", userAgent);
+    c.status(400);
+    return c.text("Not supported, must request inside clash app");
+  }
+  
+  const { content, headers } = await getOrFetchSubContent(token, userAgent!);
+  return c.text(content, 200, {
+    ...headers.rawHeaders,
+    "Content-Type": "text/yaml; charset=utf-8",
+  });
+})
 
 export default {
   port: 8787,
