@@ -75,7 +75,7 @@ app.get(":token", async (c) => {
   }
   
   try {
-    const { content, headers } = await getOrFetchSubContent(token, userAgent!);
+    const { content, headers, subInfo } = await getOrFetchSubContent(token, userAgent!);
     return c.text(content, 200, {
       ...headers.rawHeaders,
       "Content-Type": "text/yaml; charset=utf-8",

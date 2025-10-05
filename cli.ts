@@ -40,8 +40,15 @@ function getKVKey(userToken: string): string {
 /**
  * Execute wrangler kv command
  */
-async function kvPut(key: string, value: string): Promise<void> {
-  const command = `wrangler kv key put --binding=${KV_BINDING} --remote "${key}" "${value.replace(/"/g, '\\"')}"`;
+async function kvPut(key: string, value: string, metadata?: Record<string, any>): Promise<void> {
+  let command = `wrangler kv key put --binding=${KV_BINDING} --remote "${key}" "${value.replace(/"/g, '\\"')}"`;
+  
+  // Add metadata if provided
+  if (metadata) {
+    const metadataJson = JSON.stringify(metadata).replace(/"/g, '\\"');
+    command += ` --metadata "${metadataJson}"`;
+  }
+  
   console.log(`Executing: ${command}`);
   const { stdout, stderr } = await execAsync(command);
   if (stderr) console.error(stderr);
@@ -203,7 +210,8 @@ yargs(hideBin(process.argv))
         },
       };
       
-      await kvPut(kvKey, JSON.stringify(subInfo));
+      const updatedAt = Date.now();
+      await kvPut(kvKey, JSON.stringify(subInfo), { updatedAt });
       
       console.log("\n✨ Successfully added subscription!");
       logSubInfo(subInfo, kvKey);
@@ -338,7 +346,8 @@ yargs(hideBin(process.argv))
         },
       };
       
-      await kvPut(kvKey, JSON.stringify(updatedSubInfo));
+      const updatedAt = Date.now();
+      await kvPut(kvKey, JSON.stringify(updatedSubInfo), { updatedAt });
       console.log(`\n✅ Successfully updated subscription!`);
       logSubInfo(updatedSubInfo, kvKey);
     }
