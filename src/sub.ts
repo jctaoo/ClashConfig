@@ -2,6 +2,7 @@ import { env } from "cloudflare:workers";
 import YAML from "yaml";
 import { convertClashConfig } from "./convert";
 import { extractGeoDomains } from "./geo/geoHelper";
+import { detectClashPremium, detectClashXMeta } from "./utils";
 
 /**
  * 自定义错误类：Token 未找到
@@ -205,13 +206,6 @@ export async function getSubContent(subUrl: string, userAgent: string): Promise<
 }
 
 /**
- * 当前仅检测 stash，该内核不支持全部 mihomo 内核特性
- */
-export function detectClashPremium(userAgent: string): boolean {
-  return userAgent.toLowerCase().startsWith("stash/");
-}
-
-/**
  * @param yaml Subscription content
  * @param profile Profile name
  * @param userAgent User-Agent string
@@ -241,6 +235,19 @@ export async function convertSub(
     extra,
     filter,
   });
+
+  // https://github.com/MetaCubeX/ClashX.Meta/issues/58
+  if (detectClashXMeta(userAgent)) {
+    converted["tun"] = {
+      enable: true,
+      device: "utun6",
+      stack: "gVisor",
+      "dns-hijack": ["0.0.0.0:53"],
+      "auto-route": true,
+      "auto-detect-interface": true,
+    };
+  }
+
   const convertedYaml = YAML.stringify(converted);
 
   return convertedYaml;
