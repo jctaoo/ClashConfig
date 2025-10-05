@@ -251,6 +251,89 @@ yargs(hideBin(process.argv))
     }
   )
   
+  // Get subscription link
+  .command(
+    "link <token>",
+    "Get subscription link and optionally open in Clash",
+    (yargs) => {
+      return yargs
+        .positional("token", {
+          describe: "User token (sk-xxxx format)",
+          type: "string",
+        })
+        .option("base-url", {
+          alias: "b",
+          describe: "Base URL of your deployed worker",
+          type: "string",
+          default: "https://clash.jctaoo.site",
+        })
+        .option("go", {
+          alias: "g",
+          describe: "Generate and open Clash URL scheme",
+          type: "boolean",
+          default: false,
+        });
+    },
+    async (argv) => {
+      const token = argv.token as string;
+      const baseUrl = (argv["base-url"] as string);
+      const shouldGo = argv.go as boolean;
+      const kvKey = getKVKey(token);
+      
+      const value = await kvGet(kvKey);
+      if (!value) {
+        console.error(`❌ No subscription found for token: ${token}`);
+        console.error(`   KV Key: ${kvKey}`);
+        process.exit(1);
+      }
+      
+      try {
+        const subInfo: ClashSubInformationCLI = JSON.parse(value);
+        
+        // Generate subscription link
+        const normalizedBaseUrl = baseUrl.replace(/\/$/, ""); // Remove trailing slash
+        const subLink = `${normalizedBaseUrl}/${token}`;
+        
+        console.log(`\n📎 Subscription Link:`);
+        console.log(`  ${subLink}`);
+        console.log(`\n🏷️  Label: ${subInfo.label}`);
+        
+        // Generate and optionally open Clash URL scheme
+        if (shouldGo) {
+          const encodedUrl = encodeURIComponent(subLink);
+          const clashUrlScheme = `clash://install-config?url=${encodedUrl}`;
+          
+          console.log(`\n🚀 Opening Clash URL scheme...`);
+          console.log(`  ${clashUrlScheme}`);
+          
+          try {
+            // Detect platform and use appropriate command
+            const platform = process.platform;
+            let openCommand: string;
+            
+            if (platform === "win32") {
+              openCommand = `start "" "${clashUrlScheme}"`;
+            } else if (platform === "darwin") {
+              openCommand = `open "${clashUrlScheme}"`;
+            } else {
+              openCommand = `xdg-open "${clashUrlScheme}"`;
+            }
+            
+            await execAsync(openCommand);
+            console.log(`\n✅ Successfully opened Clash URL scheme!`);
+          } catch (error: any) {
+            console.error(`\n❌ Failed to open URL scheme: ${error.message}`);
+            console.error(`   Please manually open the URL in your Clash app.`);
+          }
+        }
+      } catch (error: any) {
+        console.error(`❌ Failed to parse subscription data: ${error.message}`);
+        console.error(`   The data in KV might be corrupted.`);
+        process.exit(1);
+      }
+    }
+  )
+  
   // Update subscription
   .command(
     "update <token>",

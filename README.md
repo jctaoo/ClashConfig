@@ -143,7 +143,31 @@ bun run cli get sk-your-token
 
 该命令会显示指定 token 的订阅详细信息。Token 会保存在订阅信息中，可以随时通过此命令重新获取。
 
-#### 3. 更新订阅（使用编辑器）
+#### 3. 获取订阅链接
+
+```bash
+# 使用默认 base-url (https://clash.jctaoo.site)
+bun run cli link sk-your-token
+
+# 获取链接并自动在 Clash 中打开
+bun run cli link sk-your-token --go
+# 或使用简写
+bun run cli link sk-your-token -g
+
+# 自定义 base-url
+bun run cli link sk-your-token --base-url https://your-worker.workers.dev
+
+# 自定义 base-url 并打开
+bun run cli link sk-your-token -b https://your-worker.workers.dev -g
+```
+
+该命令会生成完整的订阅链接。使用 `--go`/`-g` 参数可以自动生成 Clash URL scheme 并打开 Clash 客户端导入配置。
+
+**参数说明：**
+- `--base-url` / `-b`: Worker 部署的 base URL（默认：`https://clash.jctaoo.site`）
+- `--go` / `-g`: 生成 Clash URL scheme 并自动打开（支持 Windows/macOS/Linux）
+
+#### 4. 更新订阅（使用编辑器）
 
 ```bash
 bun run cli update sk-your-token
@@ -159,13 +183,13 @@ bun run cli update sk-your-token
 - `content` 字段会被保留，不会在编辑器中显示（避免编辑器卡顿）
 - 保存时会自动验证 JSON 格式和必填字段，如果验证失败会提示错误并允许继续编辑
 
-#### 4. 删除订阅
+#### 5. 删除订阅
 
 ```bash
 bun run cli delete sk-your-token
 ```
 
-#### 5. 列出所有订阅
+#### 6. 列出所有订阅
 
 ```bash
 bun run cli list
@@ -185,16 +209,19 @@ bun run cli list
 # 1. 添加订阅
 bun run cli add
 
-# 2. 查看订阅
+# 2. 查看订阅信息
 bun run cli get sk-your-token
 
-# 3. 更新订阅
+# 3. 获取订阅链接并在 Clash 中打开
+bun run cli link sk-your-token --go
+
+# 4. 更新订阅
 bun run cli update sk-your-token
 
-# 4. 列出所有订阅
+# 5. 列出所有订阅
 bun run cli list
 
-# 5. 删除订阅
+# 6. 删除订阅
 bun run cli delete sk-your-token
 ```
 
