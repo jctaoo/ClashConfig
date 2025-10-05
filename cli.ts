@@ -9,6 +9,9 @@ import type { ClashSubInformation } from "./src/sub";
 
 const execAsync = promisify(exec);
 
+// CLI 使用的订阅信息类型，不包含 content 字段
+type ClashSubInformationCLI = Omit<ClashSubInformation, 'content'>;
+
 const KV_BINDING = "KV";
 
 /**
@@ -97,7 +100,7 @@ async function kvList(prefix?: string): Promise<Array<{ name: string }>> {
 /**
  * Log subscription information in a formatted way
  */
-function logSubInfo(subInfo: ClashSubInformation, kvKey?: string): void {
+function logSubInfo(subInfo: ClashSubInformationCLI, kvKey?: string): void {
   console.log("\n✅ Subscription Information:");
   
   console.log(`  🔑 Token:           ${subInfo.token}`);
@@ -108,7 +111,6 @@ function logSubInfo(subInfo: ClashSubInformation, kvKey?: string): void {
   
   console.log(`  🏷️  Label:           ${subInfo.label}`);
   console.log(`  🔗 URL:             ${subInfo.url}`);
-  console.log(`  📦 Content Length:  ${subInfo.content.length} bytes`);
   console.log(`  🎯 Filter Label:    ${subInfo.filter.label}`);
   
   if (subInfo.filter.regions && subInfo.filter.regions.length > 0) {
@@ -189,11 +191,10 @@ yargs(hideBin(process.argv))
       const token = generateToken();
       const kvKey = getKVKey(token);
       
-      const subInfo: ClashSubInformation = {
+      const subInfo: ClashSubInformationCLI = {
         token: token,
         label: label,
         url: url,
-        content: "",
         filter: {
           label: filterLabel,
           regions: regions.length > 0 ? regions : undefined,
@@ -232,7 +233,7 @@ yargs(hideBin(process.argv))
       }
       
       try {
-        const subInfo: ClashSubInformation = JSON.parse(value);
+        const subInfo: ClashSubInformationCLI = JSON.parse(value);
         logSubInfo(subInfo, kvKey);
       } catch (error: any) {
         console.error(`❌ Failed to parse subscription data: ${error.message}`);
@@ -264,7 +265,7 @@ yargs(hideBin(process.argv))
         process.exit(1);
       }
       
-      let existingSubInfo: ClashSubInformation;
+      let existingSubInfo: ClashSubInformationCLI;
       try {
         existingSubInfo = JSON.parse(existingValue);
       } catch (error: any) {
@@ -323,11 +324,10 @@ yargs(hideBin(process.argv))
       const parsedContent = JSON.parse(editedContent);
       
       // Build updated subscription info
-      const updatedSubInfo: ClashSubInformation = {
+      const updatedSubInfo: ClashSubInformationCLI = {
         token: existingSubInfo.token, // Always keep the original token
         label: parsedContent.label,
         url: parsedContent.url,
-        content: existingSubInfo.content, // Keep existing content
         filter: {
           label: parsedContent.filter.label,
           regions: Array.isArray(parsedContent.filter.regions) && parsedContent.filter.regions.length > 0
@@ -383,7 +383,7 @@ yargs(hideBin(process.argv))
           const value = await kvGet(key.name);
           if (value) {
             try {
-              const subInfo: ClashSubInformation = JSON.parse(value);
+              const subInfo: ClashSubInformationCLI = JSON.parse(value);
               console.log(`🔹 ${key.name}`);
               console.log(`  🔑 Token:        ${subInfo.token}`);
               console.log(`  🏷️  Label:        ${subInfo.label}`);
