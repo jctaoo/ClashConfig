@@ -1,9 +1,11 @@
-import { env } from "cloudflare:workers";
 import { Hono } from "hono";
 import { convertSub, getOrFetchSubContent, getSubContent, parseSubHeaders, TokenNotFoundError, JSONParseError } from "./sub";
 import { checkUserAgent } from "./utils";
+import { logger } from "hono/logger";
 
 const app = new Hono();
+
+app.use(logger());
 
 /**
  * Basic clash config converter
