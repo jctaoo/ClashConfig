@@ -2,12 +2,10 @@
 
 ## 🎯 TODO
 
-- [ ] 1. 迁移到 GEOSITE
-- [ ] 2. 避免使用 classic behavior 规则
-- [ ] 3. 检查 https://github.com/DustinWin/ShellCrash/blob/dev/public/fake_ip_filter.list 以补全 fake-ip-filter
-- [ ] 5. 使用 token 和 kv 优化
-- [ ] 6. subrequest 被 cloudflare 缓存
-- [ ] 7. 优化 README 文档
+- [ ] 1. 迁移到 GEOSITE, 避免使用 classic behavior 规则
+- [ ] 2. 检查 https://github.com/DustinWin/ShellCrash/blob/dev/public/fake_ip_filter.list 以补全 fake-ip-filter
+- [ ] 3. subrequest 被 cloudflare 缓存
+- [ ] 4. 优化 README 文档
 
 ## ⚡ 快速开始
 
