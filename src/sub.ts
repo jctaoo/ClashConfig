@@ -3,6 +3,27 @@ import YAML from "yaml";
 import { convertClashConfig } from "./convert";
 import { extractGeoDomains } from "./geo/geoHelper";
 
+export interface ClashSubInformation {
+  /** 用户 Token */
+  token: string;
+  /** 订阅标签 */
+  label: string;
+  /** 订阅 URL */
+  url: string;
+  /** clash 配置内容，缓存时效 */
+  content: string;
+  
+  filter: {
+    label: string;
+    /** 地区 */
+    regions?: string[];
+    /** 最大计费倍率 */
+    maxBillingRate?: number;
+    /** 排除正则 */
+    excludeRegex?: string;
+  }
+}
+
 /**
  * @see https://www.clashverge.dev/guide/url_schemes.html#_4
  */

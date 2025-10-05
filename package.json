@@ -1,18 +1,24 @@
 {
   "name": "clash-config",
   "type": "module",
+  "version": "1.0.0",
   "scripts": {
     "dev:bun": "bun run --hot src/index.ts",
     "dev": "wrangler dev --ip 0.0.0.0",
     "deploy": "wrangler deploy --minify",
     "cf-typegen": "wrangler types --env-interface CloudflareBindings",
     "pb-gen": "pbjs -t static-module -w es6 -o ./src/geo/geo.js ./src/geo/geo.proto",
-    "pb-gen-dts": "pbts -o ./src/geo/geo.d.ts ./src/geo/geo.js"
+    "pb-gen-dts": "pbts -o ./src/geo/geo.d.ts ./src/geo/geo.js",
+    "cli": "bun run cli.ts",
+    "wrangler": "wrangler"
   },
   "dependencies": {
+    "@inquirer/prompts": "^7.8.6",
+    "@types/yargs": "^17.0.33",
     "hono": "^4.9.9",
     "protobufjs": "^7.5.4",
-    "yaml": "^2.8.1"
+    "yaml": "^2.8.1",
+    "yargs": "^18.0.0"
   },
   "devDependencies": {
     "protobufjs-cli": "^1.1.3",
