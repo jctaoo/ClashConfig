@@ -7,6 +7,7 @@
 - [ ] 3. 检查 https://github.com/DustinWin/ShellCrash/blob/dev/public/fake_ip_filter.list 以补全 fake-ip-filter
 - [ ] 5. 使用 token 和 kv 优化
 - [ ] 6. subrequest 被 cloudflare 缓存
+- [ ] 7. 优化 README 文档
 
 ## 💻 Development
 
