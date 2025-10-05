@@ -586,13 +586,14 @@ function filterNodes(cfg: AnyJson, filter: ClashSubInformation["filter"]) {
     cfg.proxies = cfg.proxies.filter((proxy: AnyJson) => {
       const normalizedName = normalizeName(proxy.name);
 
-      const [m1, m2] = [
-        /(?<=[xX✕✖⨉倍率])([1-9]+(\.\d+)*|0{1}\.\d+)(?=[xX✕✖⨉倍率])*/i,
-        /(?<=[xX✕✖⨉倍率]?)([1-9]+(\.\d+)*|0{1}\.\d+)(?=[xX✕✖⨉倍率])/i,
-      ]
+      // const [m1, m2] = [
+      //   /(?<=[xX✕✖⨉倍率])([1-9]+(\.\d+)*|0{1}\.\d+)(?=[xX✕✖⨉倍率])*/i,
+      //   /(?<=[xX✕✖⨉倍率]?)([1-9]+(\.\d+)*|0{1}\.\d+)(?=[xX✕✖⨉倍率])/i,
+      // ]
+      const m1 = /(?:(?<=[xX✕✖⨉倍率])([1-9]\d*(?:\.\d+)?|0\.\d+)|([1-9]\d*(?:\.\d+)?|0\.\d+)(?=[xX✕✖⨉倍率]))/i;
+      const match = m1.exec(normalizedName);
 
-      const multiplier = m1.exec(normalizedName)?.[1] ?? m2.exec(normalizedName)?.[1] ?? "0";
-      console.log("multiplier", normalizedName, multiplier, maxBillingRate);
+      const multiplier = match?.[1] ?? match?.[2] ?? "0";
       return parseFloat(multiplier) <= maxBillingRate;
     })
   }
