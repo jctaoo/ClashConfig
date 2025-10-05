@@ -9,6 +9,80 @@
 - [ ] 6. subrequest 被 cloudflare 缓存
 - [ ] 7. 优化 README 文档
 
+## ⚡ 快速开始
+
+### PowerShell
+
+```ps1
+$RawUrl = "https://your-raw-url";
+$SubUrl = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($RawUrl));
+$ConfigUrl = "https://clash.jctaoo.site/sub?sub=$SubUrl";
+$EncodedConfigUrl = [System.Net.WebUtility]::UrlEncode($ConfigUrl)
+$UrlScheme = "clash://install-config?url=$EncodedConfigUrl";
+Start-Process $UrlScheme
+```
+
+### MacOS
+
+```sh
+RAW_URL="https://your-raw-url"
+SUB_URL=$(echo -n $RAW_URL | base64)
+CONFIG_URL="https://clash.jctaoo.site/sub?sub=$SUB_URL"
+ENCODED_CONFIG_URL=$(python3 -c "import urllib.parse; print(urllib.parse.quote('''$CONFIG_URL'''))")
+URL_SCHEME="clash://install-config?url=$ENCODED_CONFIG_URL"
+open $URL_SCHEME
+```
+
+### iOS
+
+获取并运行 [快捷指令](https://www.icloud.com/shortcuts/e3afa7a85e924aa3926e6ea6b686bc83) (mac 也可以用)
+
+更进一步，可以使用 token 管理的后台订阅 api，支持筛选节点等功能，参考下方使用方法
+
+## 🖥️ 使用方法
+
+### 📡 API Endpoints
+
+#### 1. `/sub` - 基础订阅转换
+
+**功能**: 将机场订阅地址转换为优化后的 Clash 配置
+
+**参数**:
+- `sub` (必需): Base64 编码的订阅 URL
+- `convert` (可选): 是否进行配置转换，默认为 `true`。设置为 `false` 可跳过转换直接返回原始配置
+
+**使用示例**:
+```
+https://clash.jctaoo.site/sub?sub=<base64-encoded-url>
+https://clash.jctaoo.site/sub?sub=<base64-encoded-url>&convert=false
+```
+
+#### 2. `/:token` - Token 订阅（推荐）
+
+**功能**: 使用 Token 获取订阅，支持自动缓存和配置管理, 支持过滤订阅的节点
+
+**参数**:
+- `token` (必需): 通过 CLI 工具生成的用户 Token（格式: `sk-xxxxx`）
+
+**使用示例**:
+```
+https://clash.jctaoo.site/sk-your-token
+```
+
+**使用流程**:
+1. 使用 `bun run cli add` 添加订阅并获取 token
+2. 将 token 添加到 Clash 订阅地址: `https://clash.jctaoo.site/sk-your-token`
+3. 使用 CLI 工具管理和更新订阅配置
+
+### 💡 客户端说明
+
+- 可以为订阅设置自动更新，1440分钟更新一次
+- clash-verge-rev: 打开 虚拟网卡模式，关闭系统代理，虚拟网卡配置中，开启 严格路由
+- clashx.meta: 根据如下图片配置，然后使用 tun 模式，关闭系统代理 ![clashx-meta](./clashx-meta.png)
+  > https://github.com/MetaCubeX/ClashX.Meta/issues/103#issuecomment-2510050389
+- 其他 clash: 使用 tun 模式
+
+
 ## 💻 Development
 
 ### 前置要求
@@ -39,45 +113,6 @@
    ```
    开发服务器将在本地启动，可以进行调试和测试。
 
-## 🖥️ 使用方法
-
-- 获取机场订阅地址，进行 base64 转码
-- 添加机场订阅 URL: https://clash.jctaoo.site/sub?sub=your-base64-url
-- 可以为订阅设置自动更新，1440分钟更新一次
-- clash-verge-rev: 打开 虚拟网卡模式，关闭系统代理，虚拟网卡配置中，开启 严格路由
-- clashx.meta: 根据如下图片配置，然后使用 tun 模式，关闭系统代理 ![clashx-meta](./clashx-meta.png)
-  > https://github.com/MetaCubeX/ClashX.Meta/issues/103#issuecomment-2510050389
-- 其他 clash: 使用 tun 模式
-
-## 📟 一键命令
-
-### 🪟 PowerShell
-
-```ps1
-$RawUrl = "https://your-raw-url";
-$SubUrl = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($RawUrl));
-$ConfigUrl = "https://clash.jctaoo.site/sub?sub=$SubUrl";
-$EncodedConfigUrl = [System.Net.WebUtility]::UrlEncode($ConfigUrl)
-$UrlScheme = "clash://install-config?url=$EncodedConfigUrl";
-Start-Process $UrlScheme
-```
-
-### 🧑‍💻 MacOS
-
-```sh
-RAW_URL="https://your-raw-url"
-SUB_URL=$(echo -n $RAW_URL | base64)
-CONFIG_URL="https://clash.jctaoo.site/sub?sub=$SUB_URL"
-ENCODED_CONFIG_URL=$(python3 -c "import urllib.parse; print(urllib.parse.quote('''$CONFIG_URL'''))")
-URL_SCHEME="clash://install-config?url=$ENCODED_CONFIG_URL"
-open $URL_SCHEME
-```
-
-### 📱 iOS
-
-获取并运行 [快捷指令](https://www.icloud.com/shortcuts/e3afa7a85e924aa3926e6ea6b686bc83) (mac 也可以用)
-
----
 
 ## 🔧 CLI 工具使用指南
 
