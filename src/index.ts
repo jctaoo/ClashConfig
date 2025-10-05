@@ -76,7 +76,11 @@ app.get(":token", async (c) => {
   
   try {
     const { content, headers, subInfo } = await getOrFetchSubContent(token, userAgent!);
-    return c.text(content, 200, {
+    const contentFinal = await convertSub(content, subInfo.label, userAgent!, subInfo.filter);
+
+    // TODO: use subInfo.label as response header
+
+    return c.text(contentFinal, 200, {
       ...headers.rawHeaders,
       "Content-Type": "text/yaml; charset=utf-8",
     });

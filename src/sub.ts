@@ -215,8 +215,14 @@ export function detectClashPremium(userAgent: string): boolean {
  * @param yaml Subscription content
  * @param profile Profile name
  * @param userAgent User-Agent string
+ * @param filter Filter configuration
  */
-export async function convertSub(yaml: string, profile: string, userAgent: string): Promise<string> {
+export async function convertSub(
+  yaml: string,
+  profile: string,
+  userAgent: string,
+  filter?: ClashSubInformation["filter"]
+): Promise<string> {
   const cfg = YAML.parse(yaml);
 
   const isPremium = detectClashPremium(userAgent);
@@ -233,6 +239,7 @@ export async function convertSub(yaml: string, profile: string, userAgent: strin
     profile,
     variant: isPremium ? "stash" : "mihomo",
     extra,
+    filter,
   });
   const convertedYaml = YAML.stringify(converted);
 

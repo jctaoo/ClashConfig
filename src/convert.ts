@@ -1,6 +1,7 @@
 // prettier-ignore
 
 import { env } from "cloudflare:workers";
+import { ClashSubInformation } from "./sub";
 
 type AnyJson = Record<string, any>;
 type ConfigVariant = "stash" | "mihomo";
@@ -75,6 +76,7 @@ function generalConfig() {
       mmdb: env.mmdb,
       asn: env.asn,
     },
+    "geodata-mode": true, // meta
   };
 }
 
@@ -561,6 +563,50 @@ function rules() {
   };
 }
 
+function filterNodes(cfg: AnyJson, filter: ClashSubInformation["filter"]) {
+  const { regions = [], maxBillingRate, excludeRegex } = filter;
+
+  const lowerCasedRegions = regions.map((region) => region.toLowerCase());
+
+  // filter by regions
+  if (regions.length > 0) {
+    cfg.proxies = cfg.proxies.filter((proxy: AnyJson) => {
+      const normalizedName = normalizeName(proxy.name);
+      const region = REGIONS.find((region) => {
+        return region.regexes.some((regex) => regex.test(normalizedName));
+      });
+
+      return region && lowerCasedRegions.includes(region.id.toLowerCase());
+    });
+  }
+
+  // filter by maxBillingRate
+  if (maxBillingRate) {
+    // E.G. 🇭🇰 香港游戏丨2x HK --> 计费倍率为 2
+    cfg.proxies = cfg.proxies.filter((proxy: AnyJson) => {
+      const normalizedName = normalizeName(proxy.name);
+
+      const [m1, m2] = [
+        /(?<=[xX✕✖⨉倍率])([1-9]+(\.\d+)*|0{1}\.\d+)(?=[xX✕✖⨉倍率])*/i,
+        /(?<=[xX✕✖⨉倍率]?)([1-9]+(\.\d+)*|0{1}\.\d+)(?=[xX✕✖⨉倍率])/i,
+      ]
+
+      const multiplier = m1.exec(normalizedName)?.[1] ?? m2.exec(normalizedName)?.[1] ?? "0";
+      console.log("multiplier", normalizedName, multiplier, maxBillingRate);
+      return parseFloat(multiplier) <= maxBillingRate;
+    })
+  }
+
+  // filter by excludeRegex
+  if (excludeRegex) {
+    cfg.proxies = cfg.proxies.filter((proxy: AnyJson) => {
+      const normalizedName = normalizeName(proxy.name);
+      const regex = new RegExp(excludeRegex);
+      return !regex.test(normalizedName);
+    });
+  }
+}
+
 export function convertClashConfig(options: {
   config: AnyJson;
   profile: string;
@@ -568,10 +614,18 @@ export function convertClashConfig(options: {
   extra: {
     fakeIpFilters?: string[];
   };
+  filter?: ClashSubInformation["filter"];
 }): AnyJson {
-  const { config, profile, variant = "mihomo", extra } = options;
+  const { config, profile, variant = "mihomo", extra, filter } = options;
 
   const conservative = variant === "stash";
+
+  // do filter
+  if (filter) {
+    const { label, ...rest } = filter;
+    console.log("Do filter by label", filter.label, rest);
+    filterNodes(config, filter);
+  }
 
   // General Config
   mergeConfig(config, generalConfig());
