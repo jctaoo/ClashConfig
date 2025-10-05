@@ -38,7 +38,7 @@ function getKVKey(userToken: string): string {
  * Execute wrangler kv command
  */
 async function kvPut(key: string, value: string): Promise<void> {
-  const command = `wrangler kv key put --binding=${KV_BINDING} "${key}" "${value.replace(/"/g, '\\"')}"`;
+  const command = `wrangler kv key put --binding=${KV_BINDING} --remote "${key}" "${value.replace(/"/g, '\\"')}"`;
   console.log(`Executing: ${command}`);
   const { stdout, stderr } = await execAsync(command);
   if (stderr) console.error(stderr);
@@ -47,7 +47,7 @@ async function kvPut(key: string, value: string): Promise<void> {
 
 async function kvGet(key: string): Promise<string | null> {
   try {
-    const command = `wrangler kv key get --binding=${KV_BINDING} "${key}"`;
+    const command = `wrangler kv key get --binding=${KV_BINDING} --remote "${key}"`;
     const { stdout, stderr } = await execAsync(command);
     const output = stdout.trim();
     
@@ -80,7 +80,7 @@ async function kvGet(key: string): Promise<string | null> {
 }
 
 async function kvDelete(key: string): Promise<void> {
-  const command = `wrangler kv key delete --binding=${KV_BINDING} "${key}"`;
+  const command = `wrangler kv key delete --binding=${KV_BINDING} --remote "${key}"`;
   console.log(`Executing: ${command}`);
   const { stdout, stderr } = await execAsync(command);
   if (stderr) console.error(stderr);
@@ -89,7 +89,7 @@ async function kvDelete(key: string): Promise<void> {
 
 async function kvList(prefix?: string): Promise<Array<{ name: string }>> {
   const prefixArg = prefix ? `--prefix="${prefix}"` : "";
-  const command = `wrangler kv key list --binding=${KV_BINDING} ${prefixArg}`;
+  const command = `wrangler kv key list --binding=${KV_BINDING} --remote ${prefixArg}`;
   const { stdout } = await execAsync(command);
   return JSON.parse(stdout);
 }
