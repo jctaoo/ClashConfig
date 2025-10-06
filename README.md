@@ -1,5 +1,15 @@
 # Clash Config Script
 
+一个基于 Cloudflare Workers 的订阅转换服务，用于将机场订阅转换为优化的 Clash 配置文件。
+
+## ✨ 特性
+
+- 🚀 **无服务器部署**: 基于 Cloudflare Workers，全球加速访问
+- 🎯 **智能规则**: 内置优化的分流规则，支持 GEOIP、GEOSITE 数据
+- 🔐 **Token 管理**: 支持 Token 订阅管理，可配置节点过滤
+- 🌍 **地区筛选**: 支持按地区过滤节点
+- 📦 **多内核支持**: 第一方支持 **Clash.Meta** 和 **Stash** 内核
+
 ## 🎯 TODO
 
 - [ ] 1. 迁移到 GEOSITE, 避免使用 classic behavior 规则
