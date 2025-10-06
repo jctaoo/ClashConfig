@@ -6,7 +6,7 @@
 
 - 🚀 **无服务器部署**: 基于 Cloudflare Workers，全球加速访问
 - 🎯 **智能规则**: 内置优化的分流规则，支持 GEOIP、GEOSITE 数据
-- 🔐 **Token 管理**: 支持 Token 订阅管理，可配置节点过滤
+- 🔐 **Token 管理**: 支持 Token 订阅管理，可配置节点过滤，feel free to share token with your friends
 - 🌍 **地区筛选**: 支持按地区过滤节点
 - 📦 **多内核支持**: 第一方支持 **Clash.Meta** 和 **Stash** 内核
 
