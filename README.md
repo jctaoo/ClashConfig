@@ -17,7 +17,6 @@
 - [ ] 1. 迁移到 GEOSITE, 避免使用 classic behavior 规则
 - [ ] 2. 检查 https://github.com/DustinWin/ShellCrash/blob/dev/public/fake_ip_filter.list 以补全 fake-ip-filter
 - [ ] 3. subrequest 被 cloudflare 缓存
-- [ ] 4. 优化 README 文档
 
 ## ⚡ 快速开始
 
