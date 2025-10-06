@@ -117,7 +117,13 @@ https://clash.jctaoo.site/sk-your-token
    bun run pb-gen && bun run pb-gen-dts
    ```
 
-4. **启动开发服务器**
+4. **生成 Cloudflare Workers 类型定义**
+   ```bash
+   bun run cf-typegen
+   ```
+   这将根据 `wrangler.jsonc` 配置生成 TypeScript 类型定义文件，包括 KV、环境变量等的类型。
+
+5. **启动开发服务器**
    ```bash
    bun run dev
    ```
