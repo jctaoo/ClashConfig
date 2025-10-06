@@ -2,6 +2,8 @@
 
 一个基于 Cloudflare Workers 的订阅转换服务，用于将机场订阅转换为优化的 Clash 配置文件。
 
+[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https%3A%2F%2Fgithub.com%2Fjctaoo%2FClashConfig)
+
 ## ✨ 特性
 
 - 🚀 **无服务器部署**: 基于 Cloudflare Workers，全球加速访问
