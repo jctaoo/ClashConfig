@@ -39,9 +39,10 @@ https://clash.jctaoo.site/sub?sub=<base64-encoded-url>
 - `regions` (可选): 基于地区节点过滤，使用逗号分隔，如：`HK,US,JP`
 - `rate` (可选): 基于计费倍率过滤，只保留计费倍率小于等于该值的节点，默认为空
 - `filter` (可选): 节点名称过滤正则，移除掉不符合该正则的节点，该参数会传入 js 的 `RegExp`，默认为空
-- `dns` (可选): 设置 dns nameserver 组, 支持 `direct` 和 `strict`，默认 `strict`
+- `nameserver` (可选): 设置 dns nameserver 组, 支持 `direct` 和 `strict`，默认 `strict`
 - `rules` (可选): 未命中规则流量 dns 解析策略，支持 `always-resolve` 和 `remote`，默认 `remote`
 - `quic` (可选): 禁用 quic，默认 `true`
+- `level` (可选): 日志等级，支持 `debug`, `info`, `warning`, `error`, `silent`，默认 `info`
 
 > 参见 [参数说明](#params) 了解更多
 
@@ -206,15 +207,16 @@ bun run cli delete sk-your-token
 | 基于地区节点过滤 | `regions` | 用逗号分隔，如：HK,US,JP | 无 | ❌ |
 | 基于计费倍率过滤 | `rate` | 只保留计费倍率小于等于该值的节点 | 无 | ❌ |
 | 节点名称过滤正则 | `filter` | 移除掉不符合该正则的节点，该参数会传入 js 的 `RegExp` | 无 | ❌ |
-| dns 设置 | `dns` | 设置 dns nameserver 组, 支持 `direct` 和 `strict` | `strict` | ❌ |
+| dns 设置 | `nameserver` | 设置 dns nameserver 组, 支持 `direct` 和 `strict` | `strict` | ❌ |
 | dns 解析策略 | `rules` | 未命中规则流量 dns 解析策略，支持 `always-resolve` 和 `remote` | `remote` | ❌ |
 | 禁用 quic | `quic` | 禁用 quic | true | ❌ |
+| 日志等级 | `level` | 日志等级，支持 `debug`, `info`, `warning`, `error`, `silent` | `info` | ❌ |
 
 两种 DNS 策略的排列组合会形成不同的效果，根据实际需求来做选择
 
 > 🔒 表示不会 DNS 泄露， ⚠️ 表示有相关风险，但不代表一定泄露，如果需求只是对于绝大多数如 google 在内的黑名单网站不泄露，则可以忽视相关泄露风险
 
-| rules / dns | `direct` | `strict` |
+| rules / nameserver | `direct` | `strict` |
 | ----------- | ------ | ------ |
 | `always-resolve` | ⚠️ `国外未知域名通过 direct dns，泄露` | 🔒 `缺点在于无论国内国外网站都会进行多余 DNS 解析` |
 | `remote` | 🔒 `缺点在于国内小众网站会走代理` | 🔒 `缺点在于国内小众网站会走代理` |
