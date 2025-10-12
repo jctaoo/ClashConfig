@@ -337,12 +337,13 @@ export function convertClashConfig(options: {
   clientPlatform: string | null;
   dnsPolicy: DNSPolicy;
   disableQuic: boolean;
+  logLevel: "debug" | "info" | "warning" | "error" | "silent";
   extra: {
     lookupGeoSite: (code: string) => string[];
   };
   filter?: ClashSubInformation["filter"];
 }): AnyJson {
-  const { config, profile, dnsPolicy, disableQuic, clientPlatform, clientType, extra, filter } = options;
+  const { config, profile, dnsPolicy, disableQuic, logLevel, clientPlatform, clientType, extra, filter } = options;
 
   const bareCore = isBareCore(clientType);
 
@@ -354,7 +355,7 @@ export function convertClashConfig(options: {
   }
 
   // General Config
-  mergeConfig(config, generalConfig(bareCore));
+  mergeConfig(config, generalConfig(bareCore, logLevel));
 
   // Config DNS
   config.dns = dnsConfig(

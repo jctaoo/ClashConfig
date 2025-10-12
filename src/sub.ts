@@ -42,6 +42,13 @@ export interface ClashSubInformation {
     /** 排除正则 */
     excludeRegex?: string;
   };
+
+  /** DNS 策略 */
+  dnsPolicy?: DNSPolicy;
+  /** 禁用 QUIC */
+  disableQuic?: boolean;
+  /** 日志等级 */
+  logLevel?: "debug" | "info" | "warning" | "error" | "silent";
 }
 
 export interface CachedSubContent {
@@ -221,6 +228,7 @@ export async function convertSub(
     filter?: ClashSubInformation["filter"];
     dnsPolicy: DNSPolicy;
     disableQuic: boolean;
+    logLevel: "debug" | "info" | "warning" | "error" | "silent";
   },
 ): Promise<string> {
   console.log(`Converting subscription for profile: ${profile}`, options);
@@ -229,7 +237,7 @@ export async function convertSub(
 
   let geoDomainMap: Record<string, string[]> = {};
 
-  const { clientType, clientPlatform, filter, dnsPolicy, disableQuic } = options;
+  const { clientType, clientPlatform, filter, dnsPolicy, disableQuic, logLevel } = options;
 
   // get fake-ip-filter for premium core
   const isPremium = clientCoreType(clientType) === ClientCoreType.ClashPremium;
@@ -251,6 +259,7 @@ export async function convertSub(
     },
     disableQuic,
     dnsPolicy,
+    logLevel,
     filter,
   });
 

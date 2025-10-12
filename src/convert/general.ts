@@ -1,6 +1,9 @@
 import { env } from "cloudflare:workers";
 
-export function generalConfig(bareCore: boolean) {
+export function generalConfig(
+  bareCore: boolean,
+  logLevel: "debug" | "info" | "warning" | "error" | "silent"
+) {
   // external controller
   let external = {}
 
@@ -22,6 +25,7 @@ export function generalConfig(bareCore: boolean) {
     "allow-lan": true,
     "bind-address": "*",
     mode: "rule",
+    "log-level": logLevel,
     profile: {
       "store-selected": true,
       "store-fake-ip": true,

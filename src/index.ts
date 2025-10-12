@@ -29,6 +29,9 @@ const SubQuerySchema = z.object({
     .enum(["true", "false"])
     .default("true")
     .transform((val) => val === "true"),
+  level: z
+    .enum(["debug", "info", "warning", "error", "silent"])
+    .default("info"),
 
   regions: z
     .string("regions code divided by comma")
@@ -81,6 +84,7 @@ app.get(
           clientPlatform,
           dnsPolicy,
           disableQuic: params.quic,
+          logLevel: params.level,
           filter: {
             label: "custom-filter",
             maxBillingRate: params.rate,
@@ -125,11 +129,17 @@ app.get(":token", async (c) => {
 
   try {
     const { content, headers, subInfo } = await getOrFetchSubContent(token, userAgent!);
+    
+    const dnsPolicy = DNSPolicySchema.parse(subInfo.dnsPolicy ?? {});
+    const logLevel = subInfo.logLevel ?? "info";
+
     const contentFinal = await convertSub(content, subInfo.label, {
       clientType,
       clientPlatform,
       filter: subInfo.filter,
-      // TODO: here
+      dnsPolicy,
+      disableQuic: subInfo.disableQuic ?? true,
+      logLevel,
     });
 
     // Use subInfo.label as the filename in Content-Disposition header
