@@ -6,11 +6,35 @@ import { exec } from "child_process";
 import { promisify } from "util";
 import { input, confirm, number, editor } from "@inquirer/prompts";
 import type { ClashSubInformation } from "./src/sub";
+import { z } from "zod";
+import { DNSPolicySchema } from "./src/convert/dns";
 
 const execAsync = promisify(exec);
 
 // CLI 使用的订阅信息类型，不包含 content 字段
 type ClashSubInformationCLI = Omit<ClashSubInformation, 'content'>;
+
+// Zod schema for validating subscription information
+const ClashSubInformationSchema = z.object({
+  token: z.string().regex(/^sk-[a-f0-9]{32}$/, "Token must be in format sk-xxxx"),
+  label: z.string().min(1, "Label is required"),
+  url: z.string().url("Must be a valid URL").refine(
+    (url) => url.startsWith("http://") || url.startsWith("https://"),
+    "URL must start with http:// or https://"
+  ),
+  filter: z.object({
+    label: z.string().min(1, "Filter label is required"),
+    regions: z.array(z.string()).optional(),
+    maxBillingRate: z.number().positive().optional(),
+    excludeRegex: z.string().optional(),
+  }),
+  dnsPolicy: z.object({
+    nameserver: DNSPolicySchema.shape.nameserver,
+    rules: DNSPolicySchema.shape.rules,
+  }).optional(),
+  disableQuic: z.boolean().optional(),
+  logLevel: z.enum(["debug", "info", "warning", "error", "silent"]).optional(),
+});
 
 const KV_BINDING = "KV";
 
@@ -129,6 +153,22 @@ function logSubInfo(subInfo: ClashSubInformationCLI, kvKey?: string): void {
   if (subInfo.filter.excludeRegex) {
     console.log(`  🚫 Exclude Regex:   ${subInfo.filter.excludeRegex}`);
   }
+  
+  // Display DNS policy
+  if (subInfo.dnsPolicy) {
+    console.log(`  🌐 DNS Nameserver:  ${subInfo.dnsPolicy.nameserver || "strict"}`);
+    console.log(`  📡 DNS Rules:       ${subInfo.dnsPolicy.rules || "remote"}`);
+  }
+  
+  // Display QUIC setting
+  if (subInfo.disableQuic !== undefined) {
+    console.log(`  🚀 Disable QUIC:    ${subInfo.disableQuic}`);
+  }
+  
+  // Display log level
+  if (subInfo.logLevel) {
+    console.log(`  📝 Log Level:       ${subInfo.logLevel}`);
+  }
 }
 
 // CLI Commands
@@ -194,6 +234,72 @@ yargs(hideBin(process.argv))
         default: "",
       });
       
+      // DNS policy configuration
+      const configureDns = await confirm({
+        message: "Configure DNS policy?",
+        default: false,
+      });
+      
+      let dnsPolicy: z.infer<typeof DNSPolicySchema> | undefined;
+      if (configureDns) {
+        const nameserverInput = await input({
+          message: "DNS nameserver (direct/strict):",
+          default: "strict",
+        });
+        
+        const rulesInput = await input({
+          message: "DNS rules (always-resolve/remote):",
+          default: "remote",
+        });
+        
+        // Validate with Zod
+        const dnsResult = DNSPolicySchema.safeParse({
+          nameserver: nameserverInput,
+          rules: rulesInput,
+        });
+        
+        if (!dnsResult.success) {
+          console.error("\n❌ Invalid DNS policy configuration:");
+          dnsResult.error.issues.forEach((issue) => {
+            console.error(`   ${issue.path.join(".")}: ${issue.message}`);
+          });
+          process.exit(1);
+        }
+        
+        dnsPolicy = dnsResult.data;
+      }
+      
+      // QUIC configuration
+      const configureQuic = await confirm({
+        message: "Disable QUIC?",
+        default: true,
+      });
+      
+      // Log level configuration
+      const configureLogLevel = await confirm({
+        message: "Configure log level?",
+        default: false,
+      });
+      
+      let logLevel: "debug" | "info" | "warning" | "error" | "silent" | undefined;
+      if (configureLogLevel) {
+        const logLevelInput = await input({
+          message: "Log level (debug/info/warning/error/silent):",
+          default: "info",
+        });
+        
+        // Validate with Zod
+        const logLevelSchema = z.enum(["debug", "info", "warning", "error", "silent"]);
+        const logLevelResult = logLevelSchema.safeParse(logLevelInput);
+        
+        if (!logLevelResult.success) {
+          console.error("\n❌ Invalid log level. Must be one of: debug, info, warning, error, silent");
+          process.exit(1);
+        }
+        
+        logLevel = logLevelResult.data;
+      }
+      
       // Generate a new token
       const token = generateToken();
       const kvKey = getKVKey(token);
@@ -208,13 +314,26 @@ yargs(hideBin(process.argv))
           maxBillingRate: maxBillingRate,
           excludeRegex: excludeRegex || undefined,
         },
+        dnsPolicy: dnsPolicy,
+        disableQuic: configureQuic,
+        logLevel: logLevel,
       };
       
+      // Validate the complete subscription info with Zod
+      const validationResult = ClashSubInformationSchema.safeParse(subInfo);
+      if (!validationResult.success) {
+        console.error("\n❌ Invalid subscription configuration:");
+        validationResult.error.issues.forEach((issue) => {
+          console.error(`   ${issue.path.join(".")}: ${issue.message}`);
+        });
+        process.exit(1);
+      }
+      
       const updatedAt = Date.now();
-      await kvPut(kvKey, JSON.stringify(subInfo), { updatedAt });
+      await kvPut(kvKey, JSON.stringify(validationResult.data), { updatedAt });
       
       console.log("\n✨ Successfully added subscription!");
-      logSubInfo(subInfo, kvKey);
+      logSubInfo(validationResult.data, kvKey);
       console.log("\n💡 Tip: You can retrieve the token anytime using 'get' command.");
     }
   )
@@ -241,8 +360,21 @@ yargs(hideBin(process.argv))
       }
       
       try {
-        const subInfo: ClashSubInformationCLI = JSON.parse(value);
-        logSubInfo(subInfo, kvKey);
+        const parsedValue = JSON.parse(value);
+        
+        // Validate with Zod
+        const validationResult = ClashSubInformationSchema.safeParse(parsedValue);
+        
+        if (!validationResult.success) {
+          console.error(`❌ Invalid subscription data format:`);
+          validationResult.error.issues.forEach((issue) => {
+            console.error(`   ${issue.path.join(".")}: ${issue.message}`);
+          });
+          console.error(`   The data in KV might be corrupted.`);
+          process.exit(1);
+        }
+        
+        logSubInfo(validationResult.data, kvKey);
       } catch (error: any) {
         console.error(`❌ Failed to parse subscription data: ${error.message}`);
         console.error(`   The data in KV might be corrupted.`);
@@ -288,7 +420,21 @@ yargs(hideBin(process.argv))
       }
       
       try {
-        const subInfo: ClashSubInformationCLI = JSON.parse(value);
+        const parsedValue = JSON.parse(value);
+        
+        // Validate with Zod
+        const validationResult = ClashSubInformationSchema.safeParse(parsedValue);
+        
+        if (!validationResult.success) {
+          console.error(`❌ Invalid subscription data format:`);
+          validationResult.error.issues.forEach((issue) => {
+            console.error(`   ${issue.path.join(".")}: ${issue.message}`);
+          });
+          console.error(`   The data in KV might be corrupted.`);
+          process.exit(1);
+        }
+        
+        const subInfo = validationResult.data;
         
         // Generate subscription link
         const normalizedBaseUrl = baseUrl.replace(/\/$/, ""); // Remove trailing slash
@@ -358,7 +504,21 @@ yargs(hideBin(process.argv))
       
       let existingSubInfo: ClashSubInformationCLI;
       try {
-        existingSubInfo = JSON.parse(existingValue);
+        const parsedValue = JSON.parse(existingValue);
+        
+        // Validate with Zod
+        const validationResult = ClashSubInformationSchema.safeParse(parsedValue);
+        
+        if (!validationResult.success) {
+          console.error(`❌ Invalid subscription data format:`);
+          validationResult.error.issues.forEach((issue) => {
+            console.error(`   ${issue.path.join(".")}: ${issue.message}`);
+          });
+          console.error(`   The data in KV might be corrupted.`);
+          process.exit(1);
+        }
+        
+        existingSubInfo = validationResult.data;
       } catch (error: any) {
         console.error(`❌ Failed to parse existing subscription data: ${error.message}`);
         console.error(`   The data in KV might be corrupted.`);
@@ -380,6 +540,9 @@ yargs(hideBin(process.argv))
           maxBillingRate: existingSubInfo.filter.maxBillingRate,
           excludeRegex: existingSubInfo.filter.excludeRegex,
         },
+        dnsPolicy: existingSubInfo.dnsPolicy || { nameserver: "strict", rules: "remote" },
+        disableQuic: existingSubInfo.disableQuic !== undefined ? existingSubInfo.disableQuic : true,
+        logLevel: existingSubInfo.logLevel || "info",
       };
       
       const editedContent = await editor({
@@ -391,18 +554,14 @@ yargs(hideBin(process.argv))
           try {
             const parsedContent = JSON.parse(value);
             
-            // Validate required fields
-            if (!parsedContent.label || typeof parsedContent.label !== "string") {
-              return "Field 'label' is required and must be a string";
-            }
-            if (!parsedContent.url || typeof parsedContent.url !== "string") {
-              return "Field 'url' is required and must be a string";
-            }
-            if (!parsedContent.filter || typeof parsedContent.filter !== "object") {
-              return "Field 'filter' is required and must be an object";
-            }
-            if (!parsedContent.filter.label || typeof parsedContent.filter.label !== "string") {
-              return "Field 'filter.label' is required and must be a string";
+            // Validate with Zod schema
+            const result = ClashSubInformationSchema.safeParse(parsedContent);
+            
+            if (!result.success) {
+              const errors = result.error.issues
+                .map((issue) => `${issue.path.join(".")}: ${issue.message}`)
+                .join("\n   ");
+              return `Validation failed:\n   ${errors}`;
             }
             
             return true;
@@ -414,19 +573,21 @@ yargs(hideBin(process.argv))
       
       const parsedContent = JSON.parse(editedContent);
       
-      // Build updated subscription info
+      // Validate again with Zod to ensure type safety
+      const validationResult = ClashSubInformationSchema.safeParse(parsedContent);
+      
+      if (!validationResult.success) {
+        console.error("\n❌ Invalid subscription configuration:");
+        validationResult.error.issues.forEach((issue) => {
+          console.error(`   ${issue.path.join(".")}: ${issue.message}`);
+        });
+        process.exit(1);
+      }
+      
+      // Build updated subscription info from validated data
       const updatedSubInfo: ClashSubInformationCLI = {
+        ...validationResult.data,
         token: existingSubInfo.token, // Always keep the original token
-        label: parsedContent.label,
-        url: parsedContent.url,
-        filter: {
-          label: parsedContent.filter.label,
-          regions: Array.isArray(parsedContent.filter.regions) && parsedContent.filter.regions.length > 0
-            ? parsedContent.filter.regions
-            : undefined,
-          maxBillingRate: parsedContent.filter.maxBillingRate || undefined,
-          excludeRegex: parsedContent.filter.excludeRegex || undefined,
-        },
       };
       
       const updatedAt = Date.now();
@@ -475,8 +636,19 @@ yargs(hideBin(process.argv))
           const value = await kvGet(key.name);
           if (value) {
             try {
-              const subInfo: ClashSubInformationCLI = JSON.parse(value);
-              logSubInfo(subInfo, key.name);
+              const parsedValue = JSON.parse(value);
+              
+              // Validate with Zod
+              const validationResult = ClashSubInformationSchema.safeParse(parsedValue);
+              
+              if (!validationResult.success) {
+                console.error(`\n❌ Error parsing ${key.name}: Invalid data format`);
+                validationResult.error.issues.forEach((issue) => {
+                  console.error(`   ${issue.path.join(".")}: ${issue.message}`);
+                });
+              } else {
+                logSubInfo(validationResult.data, key.name);
+              }
             } catch (parseError: any) {
               console.error(`\n❌ Error parsing ${key.name}: Invalid JSON data`);
             }
