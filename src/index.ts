@@ -1,7 +1,16 @@
 import { Hono } from "hono";
-import { convertSub, getOrFetchSubContent, getSubContent, parseSubHeaders, TokenNotFoundError, JSONParseError } from "./sub";
-import { checkUserAgent } from "./utils";
+import {
+  convertSub,
+  getOrFetchSubContent,
+  getSubContent,
+  parseSubHeaders,
+  TokenNotFoundError,
+  JSONParseError,
+} from "./sub";
+import { checkUserAgent, ClientType } from "./client";
 import { logger } from "hono/logger";
+import { DNSPolicySchema } from "./convert/dns";
+import { ZodError } from "zod";
 
 const app = new Hono();
 
@@ -17,7 +26,9 @@ app.get("/sub", async (c) => {
   const subEncoded = c.req.query("sub");
   const convert = c.req.query("convert");
 
-  if (userAgent && !checkUserAgent(userAgent)) {
+  const [clientType, clientPlatform] = checkUserAgent(userAgent ?? "");
+
+  if (!clientType) {
     console.log("Blocked request with User-Agent:", userAgent);
     c.status(400);
     return c.text("Not supported, must request inside clash app");
@@ -67,16 +78,22 @@ app.get("/sub", async (c) => {
 app.get(":token", async (c) => {
   const token = c.req.param("token");
   const userAgent = c.req.header("User-Agent");
+  const [clientType, clientPlatform] = checkUserAgent(userAgent ?? "");
 
-  if (userAgent && !checkUserAgent(userAgent)) {
+  if (!clientType) {
     console.log("Blocked request with User-Agent:", userAgent);
     c.status(400);
     return c.text("Not supported, must request inside clash app");
   }
-  
+
   try {
     const { content, headers, subInfo } = await getOrFetchSubContent(token, userAgent!);
-    const contentFinal = await convertSub(content, subInfo.label, userAgent!, subInfo.filter);
+    const contentFinal = await convertSub(content, subInfo.label, {
+      clientType,
+      clientPlatform,
+      filter: subInfo.filter,
+      // TODO: here
+    });
 
     // Use subInfo.label as the filename in Content-Disposition header
     const contentDisposition = `attachment; filename*=UTF-8''${subInfo.label}`;

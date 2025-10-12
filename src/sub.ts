@@ -1,8 +1,9 @@
 import { env } from "cloudflare:workers";
 import YAML from "yaml";
-import { convertClashConfig } from "./convert";
+import { convertClashConfig } from "./convert/convert";
 import { extractGeoDomains } from "./geo/geoHelper";
-import { detectClashPremium, detectClashXMeta } from "./utils";
+import { ClientCoreType, clientCoreType, ClientType } from "./client";
+import { DNSPolicy } from "./convert/dns";
 
 /**
  * 自定义错误类：Token 未找到
