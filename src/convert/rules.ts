@@ -5,7 +5,7 @@ const customRules: string[] = [
   // extra china site
 ];
 
-export function rules({ dnsRules, disableQuic = true }: { dnsRules: DNSPolicy["rules"]; disableQuic?: boolean }) {
+export function rules({ dnsRules, disableQuic }: { dnsRules: DNSPolicy["rules"]; disableQuic: boolean }) {
   // 规则集通用配置
   const ruleProviderCommon = {
     type: "http",

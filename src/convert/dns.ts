@@ -3,8 +3,8 @@ import type { AnyJson } from "./type";
 import { z } from "zod";
 
 export const DNSPolicySchema = z.object({
-  nameserver: z.enum(["direct", "strict"]).default("strict").optional().describe("DNS nameserver 组"),
-  rules: z.enum(["always-resolve", "remote"]).default("remote").optional().describe("未命中规则流量 DNS 解析策略"),
+  nameserver: z.enum(["direct", "strict"]).default("strict").describe("DNS nameserver 组"),
+  rules: z.enum(["always-resolve", "remote"]).default("remote").describe("未命中规则流量 DNS 解析策略"),
 });
 
 export type DNSPolicy = z.infer<typeof DNSPolicySchema>;

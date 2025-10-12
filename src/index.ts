@@ -22,16 +22,23 @@ const SubQuerySchema = z.object({
   convert: z
     .enum(["true", "false"])
     .default("true")
-    .transform((val) => val === "true")
-    .optional(),
+    .transform((val) => val === "true"),
   nameserver: DNSPolicySchema.shape.nameserver,
   rules: DNSPolicySchema.shape.rules,
   quic: z
     .enum(["true", "false"])
     .default("true")
-    .transform((val) => val === "true")
+    .transform((val) => val === "true"),
+
+  regions: z
+    .string("regions code divided by comma")
+    .transform((val) => val.split(","))
     .optional(),
+  rate: z.coerce.number().int().positive().optional(),
+  filter: z.string().optional(),
 });
+
+
 
 /**
  * Basic clash config converter
@@ -74,6 +81,12 @@ app.get(
           clientPlatform,
           dnsPolicy,
           disableQuic: params.quic,
+          filter: {
+            label: "custom-filter",
+            maxBillingRate: params.rate,
+            regions: params.regions,
+            excludeRegex: params.filter,
+          }
         });
       } else {
         // 不进行配置优化，但是会转化为客户端配置

@@ -335,15 +335,14 @@ export function convertClashConfig(options: {
   profile: string;
   clientType: ClientType;
   clientPlatform: string | null;
-  dnsPolicy?: DNSPolicy;
-  disableQuic?: boolean;
+  dnsPolicy: DNSPolicy;
+  disableQuic: boolean;
   extra: {
     lookupGeoSite: (code: string) => string[];
   };
   filter?: ClashSubInformation["filter"];
 }): AnyJson {
-  const defaultDNSPolicy = DNSPolicySchema.parse({});
-  const { config, profile, dnsPolicy = defaultDNSPolicy, disableQuic, clientPlatform, clientType, extra, filter } = options;
+  const { config, profile, dnsPolicy, disableQuic, clientPlatform, clientType, extra, filter } = options;
 
   const bareCore = isBareCore(clientType);
 

@@ -219,8 +219,8 @@ export async function convertSub(
     clientType: ClientType;
     clientPlatform: string | null;
     filter?: ClashSubInformation["filter"];
-    dnsPolicy?: DNSPolicy;
-    disableQuic?: boolean;
+    dnsPolicy: DNSPolicy;
+    disableQuic: boolean;
   },
 ): Promise<string> {
   console.log(`Converting subscription for profile: ${profile}`, options);
