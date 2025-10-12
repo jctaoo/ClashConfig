@@ -15,6 +15,31 @@ const extraFakeIpFilters = [
   "+.stun.*.*.*",
   "+.stun.*.*.*.*",
   "+.stun.*.*.*.*.*",
+  // ntp
+  "time.*.com",
+  "time.*.gov",
+  "time.*.edu.cn",
+  "time.*.apple.com",
+  "time-ios.apple.com",
+  "time1.*.com",
+  "time2.*.com",
+  "time3.*.com",
+  "time4.*.com",
+  "time5.*.com",
+  "time6.*.com",
+  "time7.*.com",
+  "ntp.*.com",
+  "ntp1.*.com",
+  "ntp2.*.com",
+  "ntp3.*.com",
+  "ntp4.*.com",
+  "ntp5.*.com",
+  "ntp6.*.com",
+  "ntp7.*.com",
+  "*.time.edu.cn",
+  "*.ntp.org.cn",
+  "+.pool.ntp.org",
+  "time1.cloud.tencent.com",
   // QQ 系列游戏相关
   "pingfore.qq.com",
   // 微信快速登录检测失败 (private, 与 connectivity check 不包含)
@@ -176,11 +201,11 @@ if (import.meta.main) {
   const domains = await extractGeoDomains(
     "https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/geosite.dat",
     ["connectivity-check", "private"],
-  );  
+  );
   function lookupGeoSite(code: string): string[] {
     return domains[code] ?? [];
   }
 
-  const config = dnsConfig("strict", { clientType: ClientType.ClashVerge, proxies: [] }, lookupGeoSite);
+  const config = dnsConfig("strict", { clientType: ClientType.Stash, proxies: [] }, lookupGeoSite);
   console.log(JSON.stringify(config, null, 2));
 }
