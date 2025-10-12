@@ -209,47 +209,50 @@ export async function getSubContent(subUrl: string, userAgent: string): Promise<
 /**
  * @param yaml Subscription content
  * @param profile Profile name
- * @param userAgent User-Agent string
+ * @param clientType Proxy client type
  * @param filter Filter configuration
  */
 export async function convertSub(
   yaml: string,
   profile: string,
-  userAgent: string,
-  filter?: ClashSubInformation["filter"]
+  options: {
+    clientType: ClientType;
+    clientPlatform: string | null;
+    filter?: ClashSubInformation["filter"];
+    dnsPolicy?: DNSPolicy;
+  },
 ): Promise<string> {
+  console.log(`Converting subscription for profile: ${profile}`, options);
+
   const cfg = YAML.parse(yaml);
 
-  const isPremium = detectClashPremium(userAgent);
-  const extra: { fakeIpFilters?: string[] } = {};
+  let geoDomainMap: Record<string, string[]> = {};
+
+  const { clientType, clientPlatform, filter, dnsPolicy } = options;
 
   // get fake-ip-filter for premium core
+  const isPremium = clientCoreType(clientType) === ClientCoreType.ClashPremium;
   if (isPremium) {
-    const domainList = await extractGeoDomains(env.geosite, ["private", "connectivity-check"]);
-    extra.fakeIpFilters = domainList;
+    geoDomainMap = await extractGeoDomains(env.geosite, ["private", "connectivity-check"]);
+  }
+
+  function lookupGeoSite(code: string): string[] {
+    return geoDomainMap[code] ?? [];
   }
 
   const converted = convertClashConfig({
     config: cfg,
     profile,
-    variant: isPremium ? "stash" : "mihomo",
-    extra,
+    clientType,
+    clientPlatform,
+    extra: {
+      lookupGeoSite,
+    },
+    dnsPolicy,
     filter,
   });
 
-  // https://github.com/MetaCubeX/ClashX.Meta/issues/58
-  if (detectClashXMeta(userAgent)) {
-    converted["tun"] = {
-      enable: true,
-      device: "utun6",
-      stack: "gVisor",
-      "dns-hijack": ["0.0.0.0:53"],
-      "auto-route": true,
-      "auto-detect-interface": true,
-    };
-  }
-
-  const convertedYaml = YAML.stringify(converted);
+  const convertedYaml = YAML.stringify(converted, { aliasDuplicateObjects: false });
 
   return convertedYaml;
 }
@@ -276,7 +279,7 @@ async function hashToken(token: string): Promise<string> {
 export async function fetchAndCacheSubContent(
   token: string,
   userAgent: string,
-  cacheTTL: number = 3600
+  cacheTTL: number = 3600,
 ): Promise<SubContentWithInfo> {
   const hashedToken = await hashToken(token);
   const kvKey = `kv:${hashedToken}`;
@@ -315,7 +318,7 @@ export async function fetchAndCacheSubContent(
   console.log(
     `Cached subscription content to ${cacheKey} with TTL ${cacheTTL}s (kv updated at ${
       kvUpdatedAt ? new Date(kvUpdatedAt).toISOString() : "unknown"
-    })`
+    })`,
   );
 
   return {
@@ -334,7 +337,7 @@ export async function fetchAndCacheSubContent(
 export async function getOrFetchSubContent(
   token: string,
   userAgent: string,
-  cacheTTL: number = 3600
+  cacheTTL: number = 3600,
 ): Promise<SubContentWithInfo> {
   const hashedToken = await hashToken(token);
   const kvKey = `kv:${hashedToken}`;
@@ -366,8 +369,8 @@ export async function getOrFetchSubContent(
       if (currentKvUpdatedAt && cachedKvUpdatedAt && currentKvUpdatedAt > cachedKvUpdatedAt) {
         console.log(
           `Subscription info updated (kv updatedAt: ${new Date(
-            currentKvUpdatedAt
-          ).toISOString()} > cached kvUpdatedAt: ${new Date(cachedKvUpdatedAt).toISOString()}), invalidating cache`
+            currentKvUpdatedAt,
+          ).toISOString()} > cached kvUpdatedAt: ${new Date(cachedKvUpdatedAt).toISOString()}), invalidating cache`,
         );
       } else {
         const kvUpdatedAtStr = cachedKvUpdatedAt ? ` (kv updated at ${new Date(cachedKvUpdatedAt).toISOString()})` : "";

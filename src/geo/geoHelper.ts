@@ -15,7 +15,8 @@ const {
  * @param countryCodes The list of country codes to filter by
  * @returns A list of geo domains
  */
-export async function extractGeoDomains(geoSiteUrl: string, countryCodes: string[]): Promise<string[]> {
+export async function extractGeoDomains(geoSiteUrl: string, countryCodes: string[]): Promise<Record<string, string[]>> {
+  // TODO: 缓存 github 请求来降低 cpu 时间
   const res = await fetch(geoSiteUrl);
   const data = await res.arrayBuffer();
 
@@ -26,19 +27,21 @@ export async function extractGeoDomains(geoSiteUrl: string, countryCodes: string
     return countryCodes.includes(i.countryCode?.toLowerCase() ?? "");
   });
 
-  const domainList = filtered.flatMap((i) => {
-    if (!i.domain) return [];
+  const domainList = filtered
+    .filter((i) => i.countryCode)
+    .map((i) => {
+      if (!i.domain) return [];
 
-    const filteredDomain = i.domain.filter(
-      (d) => d.type && [DomainType.Plain, DomainType.Domain, DomainType.Full].includes(d.type)
-    );
+      const filteredDomain = i.domain.filter(
+        (d) => d.type && [DomainType.Plain, DomainType.Domain, DomainType.Full].includes(d.type)
+      );
 
-    return filteredDomain.map((d) => d.value).filter((d) => !!d);
-  });
+      return [i.countryCode!.toLowerCase(), filteredDomain.map((d) => d.value).filter((d) => !!d)];
+    });
+  const count = domainList.flatMap((i) => i[1]).length;
+  const domainMap = Object.fromEntries(domainList);
 
-  console.log(
-    `Extracted ${domainList.length} geo domains from ${geoSiteUrl} for countries: ${countryCodes.join(", ")}`
-  );
+  console.log(`Extracted ${count} geo domains from ${geoSiteUrl} for countries: ${countryCodes.join(", ")}`);
 
-  return domainList as string[];
+  return domainMap;
 }

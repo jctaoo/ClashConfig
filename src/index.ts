@@ -43,18 +43,23 @@ app.get("/sub", async (c) => {
   const subUrl = atob(subEncoded);
 
   try {
+    console.log("Retrieving subscription content", { subUrl, userAgent });
     const [content, subHeaders] = await getSubContent(subUrl, userAgent!);
 
+    // 不进行配置优化，但是会转化为客户端配置
     const disableConvert = convert === "false";
     let contentFinal = content;
 
     if (!disableConvert) {
-      contentFinal = await convertSub(
-        content,
-        subHeaders.fileName ?? "Clash-Config-Sub",
-        userAgent!
-      );
-      console.log("Converted config");
+      const nameserver = c.req.query("nameserver");
+      const rules = c.req.query("rules");
+      const dnsPolicy = DNSPolicySchema.parse({ nameserver, rules });
+
+      contentFinal = await convertSub(content, subHeaders.fileName ?? "Clash-Config-Sub", {
+        clientType,
+        clientPlatform,
+        dnsPolicy,
+      });
     }
 
     return c.text(contentFinal, 200, {
@@ -62,6 +67,12 @@ app.get("/sub", async (c) => {
       "Content-Type": "text/yaml; charset=utf-8",
     });
   } catch (error) {
+    // zod error
+    if (error instanceof ZodError) {
+      console.log(`Bad request: ${error.message}`);
+      c.status(400);
+      return c.text(error.message);
+    }
     if (error instanceof DOMException && error.name === "AbortError") {
       const msg = `Upstream error: ${error.message}`;
       return c.text(msg, 502);
@@ -110,7 +121,7 @@ app.get(":token", async (c) => {
       c.status(400);
       return c.text(error.message);
     }
-    
+
     // Other errors return 500
     if (error instanceof Error) {
       c.status(500);
@@ -119,7 +130,7 @@ app.get(":token", async (c) => {
     c.status(500);
     return c.text(`Internal server error`);
   }
-})
+});
 
 export default {
   port: 8787,
