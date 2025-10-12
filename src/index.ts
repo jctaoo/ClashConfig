@@ -10,81 +10,94 @@ import {
 import { checkUserAgent, ClientType } from "./client";
 import { logger } from "hono/logger";
 import { DNSPolicySchema } from "./convert/dns";
-import { ZodError } from "zod";
+import z, { ZodError } from "zod";
+import { validator } from "hono/validator";
 
 const app = new Hono();
 
 app.use(logger());
 
+const SubQuerySchema = z.object({
+  sub: z.string().min(1, "sub is required"),
+  convert: z
+    .enum(["true", "false"])
+    .default("true")
+    .transform((val) => val === "true")
+    .optional(),
+  nameserver: DNSPolicySchema.shape.nameserver,
+  rules: DNSPolicySchema.shape.rules,
+  quic: z
+    .enum(["true", "false"])
+    .default("true")
+    .transform((val) => val === "true")
+    .optional(),
+});
+
 /**
  * Basic clash config converter
- * - Parameter sub: base64 encoded sub url
- * - Parameter convert: true/false, default true, whether to convert the config
  */
-app.get("/sub", async (c) => {
-  const userAgent = c.req.header("User-Agent");
-  const subEncoded = c.req.query("sub");
-  const convert = c.req.query("convert");
-
-  const [clientType, clientPlatform] = checkUserAgent(userAgent ?? "");
-
-  if (!clientType) {
-    console.log("Blocked request with User-Agent:", userAgent);
-    c.status(400);
-    return c.text("Not supported, must request inside clash app");
-  }
-
-  if (!subEncoded) {
-    console.log("Missing sub parameter");
-    c.status(400);
-    return c.text("sub is required");
-  }
-
-  const subUrl = atob(subEncoded);
-
-  try {
-    console.log("Retrieving subscription content", { subUrl, userAgent });
-    const [content, subHeaders] = await getSubContent(subUrl, userAgent!);
-
-    // 不进行配置优化，但是会转化为客户端配置
-    const disableConvert = convert === "false";
-    let contentFinal = content;
-
-    if (!disableConvert) {
-      const nameserver = c.req.query("nameserver");
-      const rules = c.req.query("rules");
-      const dnsPolicy = DNSPolicySchema.parse({ nameserver, rules });
-
-      contentFinal = await convertSub(content, subHeaders.fileName ?? "Clash-Config-Sub", {
-        clientType,
-        clientPlatform,
-        dnsPolicy,
-      });
+app.get(
+  "/sub",
+  validator("query", (value, c) => {
+    const result = SubQuerySchema.safeParse(value);
+    if (!result.success) {
+      return c.text(result.error.message, 400);
     }
+    return result.data;
+  }),
+  async (c) => {
+    const params = c.req.valid("query");
 
-    return c.text(contentFinal, 200, {
-      ...subHeaders.rawHeaders,
-      "Content-Type": "text/yaml; charset=utf-8",
-    });
-  } catch (error) {
-    // zod error
-    if (error instanceof ZodError) {
-      console.log(`Bad request: ${error.message}`);
+    const userAgent = c.req.header("User-Agent");
+
+    const [clientType, clientPlatform] = checkUserAgent(userAgent ?? "");
+
+    if (!clientType) {
+      console.log("Blocked request with User-Agent:", userAgent);
       c.status(400);
-      return c.text(error.message);
+      return c.text("Not supported, must request inside clash app");
     }
-    if (error instanceof DOMException && error.name === "AbortError") {
-      const msg = `Upstream error: ${error.message}`;
-      return c.text(msg, 502);
-    }
-    if (error instanceof Error) {
+
+    const subUrl = atob(params.sub);
+
+    try {
+      console.log("Retrieving subscription content", { subUrl, userAgent });
+      const [content, subHeaders] = await getSubContent(subUrl, userAgent!);
+
+      let contentFinal = content;
+
+      if (params.convert) {
+        const dnsPolicy = DNSPolicySchema.parse({ nameserver: params.nameserver, rules: params.rules });
+
+        contentFinal = await convertSub(content, subHeaders.fileName ?? "Clash-Config-Sub", {
+          clientType,
+          clientPlatform,
+          dnsPolicy,
+          disableQuic: params.quic,
+        });
+      } else {
+        // 不进行配置优化，但是会转化为客户端配置
+        // Support this in future version
+      }
+
+      return c.text(contentFinal, 200, {
+        ...subHeaders.rawHeaders,
+        "Content-Type": "text/yaml; charset=utf-8",
+      });
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") {
+        const msg = `Upstream error: ${error.message}`;
+        return c.text(msg, 502);
+      }
+      if (error instanceof Error) {
+        c.status(500);
+        return c.text(`Internal server error: ${error.message}`);
+      }
       c.status(500);
-      return c.text(`Internal server error: ${error.message}`);
+      return c.text(`Internal server error`);
     }
-    c.status(500);
-    return c.text(`Internal server error`);
-  }
-});
+  },
+);
 
 app.get(":token", async (c) => {
   const token = c.req.param("token");

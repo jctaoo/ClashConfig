@@ -220,6 +220,7 @@ export async function convertSub(
     clientPlatform: string | null;
     filter?: ClashSubInformation["filter"];
     dnsPolicy?: DNSPolicy;
+    disableQuic?: boolean;
   },
 ): Promise<string> {
   console.log(`Converting subscription for profile: ${profile}`, options);
@@ -228,7 +229,7 @@ export async function convertSub(
 
   let geoDomainMap: Record<string, string[]> = {};
 
-  const { clientType, clientPlatform, filter, dnsPolicy } = options;
+  const { clientType, clientPlatform, filter, dnsPolicy, disableQuic } = options;
 
   // get fake-ip-filter for premium core
   const isPremium = clientCoreType(clientType) === ClientCoreType.ClashPremium;
@@ -248,6 +249,7 @@ export async function convertSub(
     extra: {
       lookupGeoSite,
     },
+    disableQuic,
     dnsPolicy,
     filter,
   });

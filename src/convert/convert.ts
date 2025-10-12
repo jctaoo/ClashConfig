@@ -336,13 +336,14 @@ export function convertClashConfig(options: {
   clientType: ClientType;
   clientPlatform: string | null;
   dnsPolicy?: DNSPolicy;
+  disableQuic?: boolean;
   extra: {
     lookupGeoSite: (code: string) => string[];
   };
   filter?: ClashSubInformation["filter"];
 }): AnyJson {
   const defaultDNSPolicy = DNSPolicySchema.parse({});
-  const { config, profile, dnsPolicy = defaultDNSPolicy, clientPlatform, clientType, extra, filter } = options;
+  const { config, profile, dnsPolicy = defaultDNSPolicy, disableQuic, clientPlatform, clientType, extra, filter } = options;
 
   const bareCore = isBareCore(clientType);
 
@@ -367,7 +368,7 @@ export function convertClashConfig(options: {
   );
 
   // Config Proxy Groups and rules
-  replaceConfig(config, rules(dnsPolicy.rules));
+  replaceConfig(config, rules({ dnsRules: dnsPolicy.rules, disableQuic }));
   replaceConfig(config, proxyGroups(config["proxies"], clientType !== ClientType.Stash)); // stash not support svg icon
 
   // remove hosts

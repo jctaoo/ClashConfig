@@ -5,7 +5,7 @@ const customRules: string[] = [
   // extra china site
 ];
 
-export function rules(dnsRules: DNSPolicy["rules"]) {
+export function rules({ dnsRules, disableQuic = true }: { dnsRules: DNSPolicy["rules"]; disableQuic?: boolean }) {
   // 规则集通用配置
   const ruleProviderCommon = {
     type: "http",
@@ -137,6 +137,13 @@ export function rules(dnsRules: DNSPolicy["rules"]) {
   };
   // 规则
   const rules = [
+    ...(disableQuic
+      ? [
+          "AND,(AND,(DST-PORT,443),(NETWORK,UDP)),(NOT,((GEOSITE,cn))),REJECT",
+          "AND,(AND,(DST-PORT,443),(NETWORK,UDP)),(NOT,((GEOIP,CN))),REJECT",
+        ]
+      : []),
+
     // 额外自定义规则
     ...customRules,
 
