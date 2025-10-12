@@ -10,7 +10,12 @@ export const DNSPolicySchema = z.object({
 export type DNSPolicy = z.infer<typeof DNSPolicySchema>;
 
 const extraFakeIpFilters = [
-  "stun.services.mozilla1.com",
+  // stun
+  "+.stun.*.*",
+  "+.stun.*.*.*",
+  "+.stun.*.*.*.*",
+  "+.stun.*.*.*.*.*",
+  // QQ 系列游戏相关
   "pingfore.qq.com",
   // 微信快速登录检测失败 (private, 与 connectivity check 不包含)
   "localhost.work.weixin.qq.com",
@@ -166,18 +171,16 @@ export function dnsConfig(
 }
 
 if (import.meta.main) {
-  const { extractGeoDomains } = await import("../geo/geoHelper")
+  const { extractGeoDomains } = await import("../geo/geoHelper");
 
-  const domains = await extractGeoDomains("https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/geosite.dat", ["connectivity-check", "private"]);
-  
-  // save domains to file
-  const fs = await import("fs");
-  fs.writeFileSync("./domains_connectivity_check_private.txt", JSON.stringify(domains, null, 2));
-  console.log(domains);
+  const domains = await extractGeoDomains(
+    "https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/geosite.dat",
+    ["connectivity-check", "private"],
+  );  
+  function lookupGeoSite(code: string): string[] {
+    return domains[code] ?? [];
+  }
 
-  const YAML = await import("yaml");
-
-  const config = dnsConfig("strict", { clientType: ClientType.ClashVerge, proxies: [] }, (name) => []);
+  const config = dnsConfig("strict", { clientType: ClientType.ClashVerge, proxies: [] }, lookupGeoSite);
   console.log(JSON.stringify(config, null, 2));
-  // console.log(YAML.stringify(config, { anchorPrefix: 'anchor-', aliasDuplicateObjects: false }));
 }
