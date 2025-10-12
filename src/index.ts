@@ -31,7 +31,7 @@ const SubQuerySchema = z.object({
     .transform((val) => val === "true"),
   level: z
     .enum(["debug", "info", "warning", "error", "silent"])
-    .default("info"),
+    .default("warning"),
 
   regions: z
     .string("regions code divided by comma")
@@ -132,7 +132,7 @@ app.get(":token", async (c) => {
     const { content, headers, subInfo } = await getOrFetchSubContent(token, userAgent!);
     
     const dnsPolicy = DNSPolicySchema.parse(subInfo.dnsPolicy ?? {});
-    const logLevel = subInfo.logLevel ?? "info";
+    const logLevel = subInfo.logLevel ?? "warning";
 
     const contentFinal = await convertSub(content, subInfo.label, {
       clientType,

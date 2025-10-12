@@ -42,7 +42,7 @@ https://clash.jctaoo.site/sub?sub=<base64-encoded-url>
 - `nameserver` (可选): 设置 dns nameserver 组, 支持 `direct` 和 `strict`，默认 `strict`
 - `rules` (可选): 未命中规则流量 dns 解析策略，支持 `always-resolve` 和 `remote`，默认 `remote`
 - `quic` (可选): 禁用 quic，默认 `true`
-- `level` (可选): 日志等级，支持 `debug`, `info`, `warning`, `error`, `silent`，默认 `info`
+- `level` (可选): 日志等级，支持 `debug`, `info`, `warning`, `error`, `silent`，默认 `warning`
 
 > 参见 [参数说明](#params) 了解更多
 
@@ -210,7 +210,7 @@ bun run cli delete sk-your-token
 | dns 设置 | `nameserver` | 设置 dns nameserver 组, 支持 `direct` 和 `strict` | `strict` | ❌ |
 | dns 解析策略 | `rules` | 未命中规则流量 dns 解析策略，支持 `always-resolve` 和 `remote` | `remote` | ❌ |
 | 禁用 quic | `quic` | 禁用 quic | true | ❌ |
-| 日志等级 | `level` | 日志等级，支持 `debug`, `info`, `warning`, `error`, `silent` | `info` | ❌ |
+| 日志等级 | `level` | 日志等级，支持 `debug`, `info`, `warning`, `error`, `silent` | `warning` | ❌ |
 
 两种 DNS 策略的排列组合会形成不同的效果，根据实际需求来做选择
 

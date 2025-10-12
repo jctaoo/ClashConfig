@@ -285,7 +285,7 @@ yargs(hideBin(process.argv))
       if (configureLogLevel) {
         const logLevelInput = await input({
           message: "Log level (debug/info/warning/error/silent):",
-          default: "info",
+          default: "warning",
         });
         
         // Validate with Zod
@@ -542,7 +542,7 @@ yargs(hideBin(process.argv))
         },
         dnsPolicy: existingSubInfo.dnsPolicy || { nameserver: "strict", rules: "remote" },
         disableQuic: existingSubInfo.disableQuic !== undefined ? existingSubInfo.disableQuic : true,
-        logLevel: existingSubInfo.logLevel || "info",
+        logLevel: existingSubInfo.logLevel || "warning",
       };
       
       const editedContent = await editor({
