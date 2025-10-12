@@ -128,6 +128,7 @@ app.get(":token", async (c) => {
   }
 
   try {
+    console.log("Retrieving subscription content", { userAgent });
     const { content, headers, subInfo } = await getOrFetchSubContent(token, userAgent!);
     
     const dnsPolicy = DNSPolicySchema.parse(subInfo.dnsPolicy ?? {});
