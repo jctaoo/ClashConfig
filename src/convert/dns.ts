@@ -172,7 +172,7 @@ function dnsConfigForClashPremium(
     nameserver: directDoH,
     "nameserver-policy": domainNameserverPolicy,
     // 类似 respect-rules,
-    // "follow-rule": true,
+    "follow-rule": true,
   };
 }
 
