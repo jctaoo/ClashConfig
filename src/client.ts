@@ -3,6 +3,7 @@ export enum ClientType {
   ClashXMeta,
   ClashVerge,
   ClashMetaForAndroid,
+  ClashParty,
   UnknownClash,
 
   MihomoBare,
@@ -21,6 +22,7 @@ export function clientCoreType(type: ClientType): ClientCoreType {
     case ClientType.ClashVerge:
     case ClientType.ClashMetaForAndroid:
     case ClientType.MihomoBare:
+    case ClientType.ClashParty:
     case ClientType.UnknownClash:
       return ClientCoreType.Mihomo;
   }
@@ -55,6 +57,11 @@ export function checkUserAgent(userAgent: string): [ClientType | null, string | 
     return [ClientType.ClashVerge, null];
   }
 
+  // check clash party
+  if (userAgent.toLocaleLowerCase().startsWith("mihomo.party/")) {
+    return [ClientType.ClashParty, null];
+  }
+
   // check clashx.meta
   if (userAgent.toLocaleLowerCase().startsWith("clashx meta/")) {
     return [ClientType.ClashXMeta, null];
@@ -74,6 +81,7 @@ export function checkUserAgent(userAgent: string): [ClientType | null, string | 
     return [ClientType.MihomoBare, platform];
   }
 
+  // Other clash or mihomo client, Like:
   // ClashMi: ClashMeta/1.19.14; mihomo/1.19.14
   if (userAgent.toLocaleLowerCase().startsWith("clash")) {
     return [ClientType.UnknownClash, null];
