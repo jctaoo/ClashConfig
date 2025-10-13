@@ -139,8 +139,8 @@ export function rules({ dnsRules, disableQuic }: { dnsRules: DNSPolicy["rules"];
   const rules = [
     ...(disableQuic
       ? [
-          "AND,(AND,(DST-PORT,443),(NETWORK,UDP)),(NOT,((GEOSITE,cn))),REJECT",
-          "AND,(AND,(DST-PORT,443),(NETWORK,UDP)),(NOT,((GEOIP,CN))),REJECT",
+          "AND,((DST-PORT,443),(NETWORK,UDP),(NOT,((GEOSITE,cn)))),REJECT",
+          "AND,((DST-PORT,443),(NETWORK,UDP),(NOT,((GEOIP,cn)))),REJECT",
         ]
       : []),
 
