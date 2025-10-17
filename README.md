@@ -15,10 +15,17 @@
 - ⚙️ **CLI 工具**: 提供命令行工具，方便管理订阅和生成 token
 - 📒 **生成脚本**: 支持生成全局扩展脚本，适配 Clash Verge 等客户端
 - 🎮 **裸核心支持**: 支持直接使用 Clash 核心运行，无需客户端 UI
+- 🎨 **可视化配置**: 提供静态配置页面，无需手动构建 URL
 
 ## ⚡ 快速开始
 
-打开 [https://clash.jctaoo.site](https://clash.jctaoo.site) 来使用, 或者将原始订阅链接转换为 base64 编码后，直接使用下面的链接作为订阅 URL
+### 方式一：使用在线配置页面 (推荐)
+
+打开 [https://clash.jctaoo.site](https://clash.jctaoo.site) 使用可视化配置页面，填写订阅链接和配置参数，一键生成订阅 URL。
+
+### 方式二：手动构建订阅链接
+
+将原始订阅链接转换为 base64 编码后，直接使用下面的链接作为订阅 URL
 
 ```txt
 https://clash.jctaoo.site/sub?sub=<base64-encoded-url>
