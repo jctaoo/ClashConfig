@@ -15,7 +15,7 @@
 - ⚙️ **CLI 工具**: 提供命令行工具，方便管理订阅和生成 token
 - 📒 **生成脚本**: 支持生成全局扩展脚本，适配 Clash Verge 等客户端
 - 🎮 **裸核心支持**: 支持直接使用 Clash 核心运行，无需客户端 UI
-- 🎨 **TSX 配置页面**: 使用 Hono JSX/TSX 和 Vite 构建的现代化可视化配置界面
+- 🎨 **TSX 配置页面**: 使用 Hono JSX/TSX 构建的现代化可视化配置界面
 
 ## ⚡ 快速开始
 
@@ -265,20 +265,10 @@ bun run cli delete sk-your-token
    这将根据 `wrangler.jsonc` 配置生成 TypeScript 类型定义文件，包括 KV、环境变量等的类型。
 
 5. **启动开发服务器**
-   
-   使用 Vite 开发服务器（推荐，支持 HMR）：
-   ```bash
-   bun run dev:vite
-   ```
-   
-   或使用 Wrangler 开发服务器：
    ```bash
    bun run dev
    ```
-   
-   开发服务器将在本地启动，可以进行调试和测试。
-   
-   > Vite 开发服务器使用 `@hono/vite-dev-server` 提供热模块替换（HMR）功能，提升开发体验。配置页面使用 Hono JSX/TSX 编写，支持类型安全和组件化开发。
+   开发服务器将在本地启动，可以进行调试和测试。配置页面使用 Hono JSX/TSX 编写，支持类型安全和组件化开发。
 
 
 
