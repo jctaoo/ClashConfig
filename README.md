@@ -15,10 +15,19 @@
 - ⚙️ **CLI 工具**: 提供命令行工具，方便管理订阅和生成 token
 - 📒 **生成脚本**: 支持生成全局扩展脚本，适配 Clash Verge 等客户端
 - 🎮 **裸核心支持**: 支持直接使用 Clash 核心运行，无需客户端 UI
+- 🎨 **TSX 配置页面**: 使用 Hono JSX/TSX 构建的现代化可视化配置界面
 
 ## ⚡ 快速开始
 
-打开 [https://clash.jctaoo.site](https://clash.jctaoo.site) 来使用, 或者将原始订阅链接转换为 base64 编码后，直接使用下面的链接作为订阅 URL
+### 方式一：使用在线配置页面 (推荐)
+
+打开 [https://clash.jctaoo.site](https://clash.jctaoo.site) 使用可视化配置页面，填写订阅链接和配置参数，一键生成订阅 URL。
+
+> 配置页面使用 Hono JSX/TSX 构建，提供现代化的用户体验
+
+### 方式二：手动构建订阅链接
+
+将原始订阅链接转换为 base64 编码后，直接使用下面的链接作为订阅 URL
 
 ```txt
 https://clash.jctaoo.site/sub?sub=<base64-encoded-url>
@@ -259,7 +268,7 @@ bun run cli delete sk-your-token
    ```bash
    bun run dev
    ```
-   开发服务器将在本地启动，可以进行调试和测试。
+   开发服务器将在本地启动，可以进行调试和测试。配置页面使用 Hono JSX/TSX 编写，支持类型安全和组件化开发。
 
 
 

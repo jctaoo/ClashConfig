@@ -12,10 +12,18 @@ import { logger } from "hono/logger";
 import { DNSPolicySchema } from "./convert/dns";
 import z, { ZodError } from "zod";
 import { validator } from "hono/validator";
+import { ConfigPage } from "./components/ConfigPage";
 
 const app = new Hono();
 
 app.use(logger());
+
+/**
+ * Serve static configuration page using JSX
+ */
+app.get("/", (c) => {
+  return c.html(<ConfigPage />);
+});
 
 const SubQuerySchema = z.object({
   sub: z.string().min(1, "sub is required"),
