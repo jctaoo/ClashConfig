@@ -12,17 +12,17 @@ import { logger } from "hono/logger";
 import { DNSPolicySchema } from "./convert/dns";
 import z, { ZodError } from "zod";
 import { validator } from "hono/validator";
-import { configPageHtml } from "./config-page";
+import { ConfigPage } from "./components/ConfigPage";
 
 const app = new Hono();
 
 app.use(logger());
 
 /**
- * Serve static configuration page
+ * Serve static configuration page using JSX
  */
-app.get("/", async (c) => {
-  return c.html(configPageHtml);
+app.get("/", (c) => {
+  return c.html(<ConfigPage />);
 });
 
 const SubQuerySchema = z.object({
