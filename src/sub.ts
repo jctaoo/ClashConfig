@@ -176,6 +176,8 @@ export function parseSubHeaders(response: Response): SubHeaders {
  * @param userAgent
  */
 export async function getSubContent(subUrl: string, userAgent: string): Promise<[string, SubHeaders]> {
+  const startTime = performance.now();
+  
   const controller = new AbortController();
   const t = setTimeout(() => controller.abort(), 10000); // 10 seconds
 
@@ -210,6 +212,8 @@ export async function getSubContent(subUrl: string, userAgent: string): Promise<
     return [text, subHeaders];
   } finally {
     clearTimeout(t);
+    const duration = performance.now() - startTime;
+    console.log(`[Sub] Get subscription content from ${subUrl}: ${duration.toFixed(2)}ms`);
   }
 }
 
@@ -231,41 +235,51 @@ export async function convertSub(
     logLevel: "debug" | "info" | "warning" | "error" | "silent";
   },
 ): Promise<string> {
-  console.log(`Converting subscription for profile: ${profile}`, options);
+  const startTime = performance.now();
+  
+  try {
+    console.log(`Converting subscription for profile: ${profile}`, options);
 
-  const cfg = YAML.parse(yaml);
+    const cfg = YAML.parse(yaml);
 
-  let geoDomainMap: Record<string, string[]> = {};
+    let geoDomainMap: Record<string, string[]> = {};
 
-  const { clientType, clientPlatform, filter, dnsPolicy, disableQuic, logLevel } = options;
+    const { clientType, clientPlatform, filter, dnsPolicy, disableQuic, logLevel } = options;
 
-  // get fake-ip-filter for premium core
-  const isPremium = clientCoreType(clientType) === ClientCoreType.ClashPremium;
-  if (isPremium) {
-    geoDomainMap = await extractGeoDomains(env.geosite, ["private", "connectivity-check"]);
+    // get fake-ip-filter for premium core
+    const isPremium = clientCoreType(clientType) === ClientCoreType.ClashPremium;
+    if (isPremium) {
+      const geoStartTime = performance.now();
+      geoDomainMap = await extractGeoDomains(env.geosite, ["private", "connectivity-check"]);
+      const geoDuration = performance.now() - geoStartTime;
+      console.log(`[Sub] Extract geo domains: ${geoDuration.toFixed(2)}ms`);
+    }
+
+    function lookupGeoSite(code: string): string[] {
+      return geoDomainMap[code] ?? [];
+    }
+
+    const converted = convertClashConfig({
+      config: cfg,
+      profile,
+      clientType,
+      clientPlatform,
+      extra: {
+        lookupGeoSite,
+      },
+      disableQuic,
+      dnsPolicy,
+      logLevel,
+      filter,
+    });
+
+    const convertedYaml = YAML.stringify(converted, { aliasDuplicateObjects: false });
+
+    return convertedYaml;
+  } finally {
+    const duration = performance.now() - startTime;
+    console.log(`[Sub] Convert subscription: ${profile}: ${duration.toFixed(2)}ms`);
   }
-
-  function lookupGeoSite(code: string): string[] {
-    return geoDomainMap[code] ?? [];
-  }
-
-  const converted = convertClashConfig({
-    config: cfg,
-    profile,
-    clientType,
-    clientPlatform,
-    extra: {
-      lookupGeoSite,
-    },
-    disableQuic,
-    dnsPolicy,
-    logLevel,
-    filter,
-  });
-
-  const convertedYaml = YAML.stringify(converted, { aliasDuplicateObjects: false });
-
-  return convertedYaml;
 }
 
 /**
@@ -293,49 +307,56 @@ export async function fetchAndCacheSubContent(
   cacheTTL: number = 3600,
 ): Promise<SubContentWithInfo> {
   const hashedToken = await hashToken(token);
-  const kvKey = `kv:${hashedToken}`;
-  const cacheKey = `sub:${hashedToken}`;
-
-  // 1. 从 KV 中获取订阅配置，同时获取 metadata 中的 updatedAt
-  const kvValue = await env.KV.getWithMetadata<{ updatedAt?: number }>(kvKey);
-  if (!kvValue.value) {
-    throw new TokenNotFoundError(token);
-  }
-
-  let subInfo: ClashSubInformation;
+  const startTime = performance.now();
+  
   try {
-    subInfo = JSON.parse(kvValue.value);
-  } catch (error) {
-    throw new JSONParseError(error instanceof Error ? error.message : "Unknown error");
+    const kvKey = `kv:${hashedToken}`;
+    const cacheKey = `sub:${hashedToken}`;
+
+    // 1. 从 KV 中获取订阅配置，同时获取 metadata 中的 updatedAt
+    const kvValue = await env.KV.getWithMetadata<{ updatedAt?: number }>(kvKey);
+    if (!kvValue.value) {
+      throw new TokenNotFoundError(token);
+    }
+
+    let subInfo: ClashSubInformation;
+    try {
+      subInfo = JSON.parse(kvValue.value);
+    } catch (error) {
+      throw new JSONParseError(error instanceof Error ? error.message : "Unknown error");
+    }
+
+    const kvUpdatedAt = kvValue.metadata?.updatedAt;
+
+    // 2. 获取订阅内容
+    console.log(`Fetching subscription from: ${subInfo.url}`);
+    const [content, headers] = await getSubContent(subInfo.url, userAgent);
+
+    // 3. 缓存到 KV，将 kvUpdatedAt 保存到 metadata 用于缓存失效判断
+    const cachedData: CachedSubContent = {
+      content,
+      headers,
+    };
+
+    await env.KV.put(cacheKey, JSON.stringify(cachedData), {
+      expirationTtl: cacheTTL,
+      metadata: { kvUpdatedAt },
+    });
+
+    console.log(
+      `Cached subscription content to ${cacheKey} with TTL ${cacheTTL}s (kv updated at ${
+        kvUpdatedAt ? new Date(kvUpdatedAt).toISOString() : "unknown"
+      })`,
+    );
+
+    return {
+      ...cachedData,
+      subInfo,
+    };
+  } finally {
+    const duration = performance.now() - startTime;
+    console.log(`[Sub] Fetch and cache: ${hashedToken}: ${duration.toFixed(2)}ms`);
   }
-
-  const kvUpdatedAt = kvValue.metadata?.updatedAt;
-
-  // 2. 获取订阅内容
-  console.log(`Fetching subscription from: ${subInfo.url}`);
-  const [content, headers] = await getSubContent(subInfo.url, userAgent);
-
-  // 3. 缓存到 KV，将 kvUpdatedAt 保存到 metadata 用于缓存失效判断
-  const cachedData: CachedSubContent = {
-    content,
-    headers,
-  };
-
-  await env.KV.put(cacheKey, JSON.stringify(cachedData), {
-    expirationTtl: cacheTTL,
-    metadata: { kvUpdatedAt },
-  });
-
-  console.log(
-    `Cached subscription content to ${cacheKey} with TTL ${cacheTTL}s (kv updated at ${
-      kvUpdatedAt ? new Date(kvUpdatedAt).toISOString() : "unknown"
-    })`,
-  );
-
-  return {
-    ...cachedData,
-    subInfo,
-  };
 }
 
 /**
@@ -351,51 +372,58 @@ export async function getOrFetchSubContent(
   cacheTTL: number = 3600,
 ): Promise<SubContentWithInfo> {
   const hashedToken = await hashToken(token);
-  const kvKey = `kv:${hashedToken}`;
-  const cacheKey = `sub:${hashedToken}`;
-
-  // 获取 kv:xxx 的 metadata，检查 updatedAt
-  const kvValue = await env.KV.getWithMetadata<{ updatedAt?: number }>(kvKey);
-  if (!kvValue.value) {
-    throw new TokenNotFoundError(token);
-  }
-
-  let subInfo: ClashSubInformation;
+  const startTime = performance.now();
+  
   try {
-    subInfo = JSON.parse(kvValue.value);
-  } catch (error) {
-    throw new JSONParseError(error instanceof Error ? error.message : "Unknown error");
-  }
+    const kvKey = `kv:${hashedToken}`;
+    const cacheKey = `sub:${hashedToken}`;
 
-  const currentKvUpdatedAt = kvValue.metadata?.updatedAt;
-
-  // 尝试从缓存获取，同时获取 metadata
-  const cacheValue = await env.KV.getWithMetadata<{ kvUpdatedAt?: number }>(cacheKey);
-  if (cacheValue.value) {
-    try {
-      const cached = JSON.parse(cacheValue.value) as CachedSubContent;
-      const cachedKvUpdatedAt = cacheValue.metadata?.kvUpdatedAt;
-
-      // 检查订阅信息是否已更新：如果 kv 的 updatedAt 不同于缓存时的 kvUpdatedAt，则使缓存失效
-      if (currentKvUpdatedAt && cachedKvUpdatedAt && currentKvUpdatedAt > cachedKvUpdatedAt) {
-        console.log(
-          `Subscription info updated (kv updatedAt: ${new Date(
-            currentKvUpdatedAt,
-          ).toISOString()} > cached kvUpdatedAt: ${new Date(cachedKvUpdatedAt).toISOString()}), invalidating cache`,
-        );
-      } else {
-        const kvUpdatedAtStr = cachedKvUpdatedAt ? ` (kv updated at ${new Date(cachedKvUpdatedAt).toISOString()})` : "";
-        console.log(`Using cached subscription content from ${cacheKey}${kvUpdatedAtStr}`);
-        return {
-          ...cached,
-          subInfo,
-        };
-      }
-    } catch (error) {
-      console.warn(`Failed to parse cached data, fetching fresh content: ${error}`);
+    // 获取 kv:xxx 的 metadata，检查 updatedAt
+    const kvValue = await env.KV.getWithMetadata<{ updatedAt?: number }>(kvKey);
+    if (!kvValue.value) {
+      throw new TokenNotFoundError(token);
     }
-  }
 
-  // 缓存不存在、解析失败或订阅信息已更新，重新获取
-  return await fetchAndCacheSubContent(token, userAgent, cacheTTL);
+    let subInfo: ClashSubInformation;
+    try {
+      subInfo = JSON.parse(kvValue.value);
+    } catch (error) {
+      throw new JSONParseError(error instanceof Error ? error.message : "Unknown error");
+    }
+
+    const currentKvUpdatedAt = kvValue.metadata?.updatedAt;
+
+    // 尝试从缓存获取，同时获取 metadata
+    const cacheValue = await env.KV.getWithMetadata<{ kvUpdatedAt?: number }>(cacheKey);
+    if (cacheValue.value) {
+      try {
+        const cached = JSON.parse(cacheValue.value) as CachedSubContent;
+        const cachedKvUpdatedAt = cacheValue.metadata?.kvUpdatedAt;
+
+        // 检查订阅信息是否已更新：如果 kv 的 updatedAt 不同于缓存时的 kvUpdatedAt，则使缓存失效
+        if (currentKvUpdatedAt && cachedKvUpdatedAt && currentKvUpdatedAt > cachedKvUpdatedAt) {
+          console.log(
+            `Subscription info updated (kv updatedAt: ${new Date(
+              currentKvUpdatedAt,
+            ).toISOString()} > cached kvUpdatedAt: ${new Date(cachedKvUpdatedAt).toISOString()}), invalidating cache`,
+          );
+        } else {
+          const kvUpdatedAtStr = cachedKvUpdatedAt ? ` (kv updated at ${new Date(cachedKvUpdatedAt).toISOString()})` : "";
+          console.log(`Using cached subscription content from ${cacheKey}${kvUpdatedAtStr}`);
+          return {
+            ...cached,
+            subInfo,
+          };
+        }
+      } catch (error) {
+        console.warn(`Failed to parse cached data, fetching fresh content: ${error}`);
+      }
+    }
+
+    // 缓存不存在、解析失败或订阅信息已更新，重新获取
+    return await fetchAndCacheSubContent(token, userAgent, cacheTTL);
+  } finally {
+    const duration = performance.now() - startTime;
+    console.log(`[Sub] Get or fetch: ${hashedToken}: ${duration.toFixed(2)}ms`);
+  }
 }

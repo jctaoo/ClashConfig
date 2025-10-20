@@ -12,10 +12,11 @@ import { logger } from "hono/logger";
 import { DNSPolicySchema } from "./convert/dns";
 import z, { ZodError } from "zod";
 import { validator } from "hono/validator";
+import { timing } from "hono/timing"
 
 const app = new Hono();
 
-app.use(logger());
+app.use(logger()).use(timing());
 
 const SubQuerySchema = z.object({
   sub: z.string().min(1, "sub is required"),
