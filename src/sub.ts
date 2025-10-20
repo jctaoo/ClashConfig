@@ -259,7 +259,10 @@ export async function convertSub(
   try {
     console.log(`Converting subscription for profile: ${profile}`, options);
 
+    const parseStartTime = performance.now();
     const cfg = YAML.parse(yaml);
+    const parseDuration = performance.now() - parseStartTime;
+    console.log(`[Sub] Parse YAML: ${parseDuration.toFixed(2)}ms`);
 
     let geoDomainMap: Record<string, string[]> = {};
 
