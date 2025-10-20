@@ -4,7 +4,7 @@ import { convertClashConfig } from "./convert/convert";
 import { extractGeoDomains } from "./geo/geoHelper";
 import { ClientCoreType, clientCoreType, ClientType } from "./client";
 import { DNSPolicy } from "./convert/dns";
-import { formatDateTime } from "./utils";
+import { formatDateTime, isLikelyYAML } from "./utils";
 
 /**
  * Token 配置的 metadata
@@ -224,9 +224,7 @@ export async function getSubContent(subUrl: string, userAgent: string): Promise<
     console.log(`Got subscription content with length ${text.length}`, subHeaders);
 
     // check is yaml
-    // check first line is xxx: xxx
-    const firstLine = text.trim().split("\n")[0];
-    if (!firstLine.includes(":")) {
+    if (!isLikelyYAML(text)) {
       throw new Error("Upstream error: content is not yaml");
     }
 
@@ -430,7 +428,7 @@ export async function getOrFetchSubContent(
           console.log(`Cache Hit: Subscription content from ${subCacheKey}${kvUpdatedAtStr}`);
           return {
             ...cached,
-            subInfo
+            subInfo,
           };
         }
       } catch (error) {
