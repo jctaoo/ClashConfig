@@ -72,7 +72,8 @@ app.get(
     const subUrl = atob(params.sub);
 
     try {
-      console.log("Retrieving subscription content", { subUrl, userAgent });
+      const { city, country } = c.req.raw.cf ?? {};
+      console.log(`Retrieving subscription content from ${city}, ${country}`, { subUrl, userAgent });
       const [content, subHeaders] = await getSubContent(subUrl, userAgent!);
 
       let contentFinal = content;
@@ -129,7 +130,8 @@ app.get(":token", async (c) => {
   }
 
   try {
-    console.log("Retrieving subscription content", { userAgent });
+    const { city, country } = c.req.raw.cf ?? {};
+    console.log(`Retrieving subscription content from ${city}, ${country}`, { userAgent });
     const { content, headers, subInfo } = await getOrFetchSubContent(token, userAgent!);
     
     const dnsPolicy = DNSPolicySchema.parse(subInfo.dnsPolicy ?? {});
