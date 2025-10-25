@@ -5,6 +5,7 @@ import { extractGeoDomains } from "./geo/geoHelper";
 import { ClientCoreType, clientCoreType, ClientType } from "./client";
 import { DNSPolicy } from "./convert/dns";
 import { formatDateTime, isLikelyYAML } from "./utils";
+import { AnyJson } from "./convert/type";
 
 /**
  * Token 配置的 metadata
@@ -73,8 +74,8 @@ export interface ClashSubInformation {
 }
 
 export interface CachedSubContent {
-  /** 订阅内容 */
-  content: string;
+  /** 订阅内容（解析后的配置对象） */
+  content: AnyJson;
   /** 订阅 Headers */
   headers: SubHeaders;
 }
@@ -237,13 +238,13 @@ export async function getSubContent(subUrl: string, userAgent: string): Promise<
 }
 
 /**
- * @param yaml Subscription content
+ * @param configOrYaml Subscription config (can be YAML string or parsed object)
  * @param profile Profile name
  * @param clientType Proxy client type
  * @param filter Filter configuration
  */
 export async function convertSub(
-  yaml: string,
+  configOrYaml: string | AnyJson,
   profile: string,
   options: {
     clientType: ClientType;
@@ -259,10 +260,16 @@ export async function convertSub(
   try {
     console.log(`Converting subscription for profile: ${profile}`, options);
 
-    const parseStartTime = performance.now();
-    const cfg = YAML.parse(yaml);
-    const parseDuration = performance.now() - parseStartTime;
-    console.log(`[Sub] Parse YAML: ${parseDuration.toFixed(2)}ms`);
+    // 根据类型自适应：如果是字符串则解析，否则直接使用
+    let cfg: AnyJson;
+    if (typeof configOrYaml === "string") {
+      const parseStartTime = performance.now();
+      cfg = YAML.parse(configOrYaml);
+      const parseDuration = performance.now() - parseStartTime;
+      console.log(`[Sub] Parse YAML: ${parseDuration.toFixed(2)}ms`);
+    } else {
+      cfg = configOrYaml;
+    }
 
     let geoDomainMap: Record<string, string[]> = {};
 
@@ -341,11 +348,17 @@ export async function fetchAndCacheSubContent(
 
     // 1. 获取订阅内容
     console.log(`Fetching subscription from: ${subInfo.url}`);
-    const [content, headers] = await getSubContent(subInfo.url, userAgent);
+    const [yamlContent, headers] = await getSubContent(subInfo.url, userAgent);
 
-    // 2. 缓存到 KV，将 tokenConfigUpdatedAt 保存到 metadata 用于缓存失效判断
+    // 2. 解析 YAML 为 JSON 对象
+    const parseStartTime = performance.now();
+    const parsedContent = YAML.parse(yamlContent);
+    const parseDuration = performance.now() - parseStartTime;
+    console.log(`[Sub] Parse YAML for caching: ${parseDuration.toFixed(2)}ms`);
+
+    // 3. 缓存解析后的对象到 KV，将 tokenConfigUpdatedAt 保存到 metadata 用于缓存失效判断
     const cachedData: CachedSubContent = {
-      content,
+      content: parsedContent,
       headers,
     };
 
@@ -355,7 +368,7 @@ export async function fetchAndCacheSubContent(
     });
 
     console.log(
-      `Cached subscription content to ${subCacheKey} with TTL ${cacheTTL}s (token updatedAt ${
+      `Cached parsed subscription content to ${subCacheKey} with TTL ${cacheTTL}s (token updatedAt ${
         tokenConfigUpdatedAt ? formatDateTime(tokenConfigUpdatedAt) : "unknown"
       })`,
     );

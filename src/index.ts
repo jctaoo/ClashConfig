@@ -12,7 +12,7 @@ import { logger } from "hono/logger";
 import { DNSPolicySchema } from "./convert/dns";
 import z, { ZodError } from "zod";
 import { validator } from "hono/validator";
-import { timing } from "hono/timing"
+import { timing } from "hono/timing";
 
 const app = new Hono();
 
@@ -74,14 +74,14 @@ app.get(
     try {
       const { city, country } = c.req.raw.cf ?? {};
       console.log(`Retrieving subscription content from ${city}, ${country}`, { subUrl, userAgent });
-      const [content, subHeaders] = await getSubContent(subUrl, userAgent!);
+      const [yamlContent, subHeaders] = await getSubContent(subUrl, userAgent!);
 
-      let contentFinal = content;
+      let contentFinal = yamlContent;
 
       if (params.convert) {
         const dnsPolicy = DNSPolicySchema.parse({ nameserver: params.nameserver, rules: params.rules });
 
-        contentFinal = await convertSub(content, subHeaders.fileName ?? "Clash-Config-Sub", {
+        contentFinal = await convertSub(yamlContent, subHeaders.fileName ?? "Clash-Config-Sub", {
           clientType,
           clientPlatform,
           dnsPolicy,
