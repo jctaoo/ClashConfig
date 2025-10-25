@@ -1,5 +1,5 @@
 import { env } from "cloudflare:workers";
-import YAML from "yaml";
+import * as yaml from "js-yaml";
 import { convertClashConfig } from "./convert/convert";
 import { extractGeoDomains } from "./geo/geoHelper";
 import { ClientCoreType, clientCoreType, ClientType } from "./client";
@@ -264,7 +264,7 @@ export async function convertSub(
     let cfg: AnyJson;
     if (typeof configOrYaml === "string") {
       const parseStartTime = performance.now();
-      cfg = YAML.parse(configOrYaml);
+      cfg = yaml.load(configOrYaml) as AnyJson;
       const parseDuration = performance.now() - parseStartTime;
       console.log(`[Sub] Parse YAML: ${parseDuration.toFixed(2)}ms`);
     } else {
@@ -302,7 +302,10 @@ export async function convertSub(
       filter,
     });
 
-    const convertedYaml = YAML.stringify(converted, { aliasDuplicateObjects: false });
+    const stringifyStartTime = performance.now();
+    const convertedYaml = yaml.dump(converted, { noRefs: true });
+    const stringifyDuration = performance.now() - stringifyStartTime;
+    console.log(`[Sub] Stringify YAML: ${stringifyDuration.toFixed(2)}ms`);
 
     return convertedYaml;
   } finally {
@@ -352,7 +355,7 @@ export async function fetchAndCacheSubContent(
 
     // 2. 解析 YAML 为 JSON 对象
     const parseStartTime = performance.now();
-    const parsedContent = YAML.parse(yamlContent);
+    const parsedContent = yaml.load(yamlContent) as AnyJson;
     const parseDuration = performance.now() - parseStartTime;
     console.log(`[Sub] Parse YAML for caching: ${parseDuration.toFixed(2)}ms`);
 
@@ -426,7 +429,11 @@ export async function getOrFetchSubContent(
     const subCache = bulkResult.get(subCacheKey);
     if (subCache?.value) {
       try {
+        const parseCachedStartTime = performance.now();
         const cached = JSON.parse(subCache.value) as CachedSubContent;
+        const parseCachedDuration = performance.now() - parseCachedStartTime;
+        console.log(`[Sub] Parse cached content: ${parseCachedDuration.toFixed(2)}ms`);
+        
         const curSubCacheUpdatedAt = (subCache.metadata as CacheMetadata | null)?.kvUpdatedAt;
 
         // Check if the subscription info is updated
