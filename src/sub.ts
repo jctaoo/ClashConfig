@@ -1,10 +1,9 @@
 import { env } from "cloudflare:workers";
-import * as yaml from "js-yaml";
 import { convertClashConfig } from "./convert/convert";
 import { extractGeoDomains } from "./geo/geoHelper";
 import { ClientCoreType, clientCoreType, ClientType } from "./client";
 import { DNSPolicy } from "./convert/dns";
-import { formatDateTime, isLikelyYAML } from "./utils";
+import { formatDateTime, isLikelyYAML, parseYAML, dumpYAML } from "./utils";
 import { AnyJson } from "./convert/type";
 
 /**
@@ -264,7 +263,7 @@ export async function convertSub(
     let cfg: AnyJson;
     if (typeof configOrYaml === "string") {
       const parseStartTime = performance.now();
-      cfg = yaml.load(configOrYaml) as AnyJson;
+      cfg = parseYAML(configOrYaml) as AnyJson;
       const parseDuration = performance.now() - parseStartTime;
       console.log(`[Sub] Parse YAML: ${parseDuration.toFixed(2)}ms`);
     } else {
@@ -303,7 +302,7 @@ export async function convertSub(
     });
 
     const stringifyStartTime = performance.now();
-    const convertedYaml = yaml.dump(converted, { noRefs: true });
+    const convertedYaml = dumpYAML(converted);
     const stringifyDuration = performance.now() - stringifyStartTime;
     console.log(`[Sub] Stringify YAML: ${stringifyDuration.toFixed(2)}ms`);
 
@@ -355,7 +354,7 @@ export async function fetchAndCacheSubContent(
 
     // 2. 解析 YAML 为 JSON 对象
     const parseStartTime = performance.now();
-    const parsedContent = yaml.load(yamlContent) as AnyJson;
+    const parsedContent = parseYAML(yamlContent) as AnyJson;
     const parseDuration = performance.now() - parseStartTime;
     console.log(`[Sub] Parse YAML for caching: ${parseDuration.toFixed(2)}ms`);
 

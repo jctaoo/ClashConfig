@@ -1,8 +1,28 @@
+import * as yaml from "js-yaml";
+
 export function formatDateTime(date: Date | number) {
 	if (typeof date === "number") {
 		return formatDateTime(new Date(date))
 	}
 	return date.toISOString();
+}
+
+/**
+ * Parse YAML string to JSON object
+ * @param yamlString - The YAML string to parse
+ * @returns Parsed object
+ */
+export function parseYAML(yamlString: string): unknown {
+	return yaml.load(yamlString);
+}
+
+/**
+ * Dump object to YAML string
+ * @param obj - The object to dump
+ * @returns YAML string
+ */
+export function dumpYAML(obj: unknown): string {
+	return yaml.dump(obj, { noRefs: true });
 }
 
 /**
