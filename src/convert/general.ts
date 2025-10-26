@@ -9,8 +9,8 @@ export function generalConfig(
 
   if (bareCore) {
     external = {
-      "external-ui-url": "https://github.com/MetaCubeX/metacubexd/archive/refs/heads/gh-pages.zip", // 从 GitHub Pages 分支获取
-      "external-ui-name": "xd",
+      "external-ui-url": "https://github.com/Zephyruso/zashboard/releases/latest/download/dist.zip", // 从 GitHub Pages 分支获取
+      "external-ui-name": "zashboard",
       "external-ui": "ui",
       "external-controller": "127.0.0.1:9090",
       "external-controller-cors": {
