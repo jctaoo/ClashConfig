@@ -21,8 +21,4 @@
       "remote": true
     }
   ],
-  "build": {
-    "command": "pnpm run build"
-  },
-  
 }
