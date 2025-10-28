@@ -22,6 +22,7 @@
     }
   ],
   "build": {
-    "command": "npm run build"
-  }
+    "command": "pnpm run build"
+  },
+  
 }
