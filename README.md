@@ -70,7 +70,7 @@ https://clash.jctaoo.site/sk-your-token
 ```
 
 **使用流程**:
-1. 使用 `pnpm run cli -- add` 添加订阅并获取 token
+1. 使用 `pnpm run cli add` 添加订阅并获取 token
 2. 将 token 添加到 Clash 订阅地址: `https://clash.jctaoo.site/sk-your-token`
 3. 使用 CLI 工具管理和更新订阅配置
 
@@ -101,7 +101,7 @@ https://clash.jctaoo.site/sk-your-token
 #### 1. 添加订阅（交互式）
 
 ```bash
-pnpm run cli -- add
+pnpm run cli add
 ```
 
 该命令会通过交互式提示引导你输入所有必要信息，并自动生成 token。参数说明参见 [参数说明](#params)。
@@ -109,7 +109,7 @@ pnpm run cli -- add
 #### 2. 获取订阅信息
 
 ```bash
-pnpm run cli -- get sk-your-token
+pnpm run cli get sk-your-token
 ```
 
 该命令会显示指定 token 的订阅详细信息。Token 会保存在订阅信息中，可以随时通过此命令重新获取。
@@ -118,18 +118,18 @@ pnpm run cli -- get sk-your-token
 
 ```bash
 # 使用默认 base-url (https://clash.jctaoo.site)
-pnpm run cli -- link sk-your-token
+pnpm run cli link sk-your-token
 
 # 获取链接并自动在 Clash 中打开
-pnpm run cli -- link sk-your-token --go
+pnpm run cli link sk-your-token --go
 # 或使用简写
-pnpm run cli -- link sk-your-token -g
+pnpm run cli link sk-your-token -g
 
 # 自定义 base-url
-pnpm run cli -- link sk-your-token --base-url https://your-worker.workers.dev
+pnpm run cli link sk-your-token --base-url https://your-worker.workers.dev
 
 # 自定义 base-url 并打开
-pnpm run cli -- link sk-your-token -b https://your-worker.workers.dev -g
+pnpm run cli link sk-your-token -b https://your-worker.workers.dev -g
 ```
 
 该命令会生成完整的订阅链接。使用 `--go`/`-g` 参数可以自动生成 Clash URL scheme 并打开 Clash 客户端导入配置。
@@ -141,7 +141,7 @@ pnpm run cli -- link sk-your-token -b https://your-worker.workers.dev -g
 #### 4. 更新订阅（使用编辑器）
 
 ```bash
-pnpm run cli -- update sk-your-token
+pnpm run cli update sk-your-token
 ```
 
 该命令会打开你的默认编辑器，显示当前订阅信息的 JSON 格式，你可以直接在编辑器中修改。保存后会自动更新订阅。参见 [参数说明](#params)。
@@ -149,13 +149,13 @@ pnpm run cli -- update sk-your-token
 #### 5. 删除订阅
 
 ```bash
-pnpm run cli -- delete sk-your-token
+pnpm run cli delete sk-your-token
 ```
 
 #### 6. 列出所有订阅
 
 ```bash
-pnpm run cli -- list
+pnpm run cli list
 ```
 
 该命令会列出所有已保存的订阅信息，包括 token、标签、URL 等关键信息。
@@ -170,22 +170,22 @@ pnpm run cli -- list
 
 ```bash
 # 1. 添加订阅
-pnpm run cli -- add
+pnpm run cli add
 
 # 2. 查看订阅信息
-pnpm run cli -- get sk-your-token
+pnpm run cli get sk-your-token
 
 # 3. 获取订阅链接并在 Clash 中打开
-pnpm run cli -- link sk-your-token --go
+pnpm run cli link sk-your-token --go
 
 # 4. 更新订阅
-pnpm run cli -- update sk-your-token
+pnpm run cli update sk-your-token
 
 # 5. 列出所有订阅
-pnpm run cli -- list
+pnpm run cli list
 
 # 6. 删除订阅
-pnpm run cli -- delete sk-your-token
+pnpm run cli delete sk-your-token
 ```
 
 ### CLI 注意事项
