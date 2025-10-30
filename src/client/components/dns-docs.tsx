@@ -176,7 +176,7 @@ export function DnsDocs(props: { nameserver: NameserverPolicy; rules: ResolveRul
           <AccordionTrigger className="px-4 py-3 hover:no-underline rounded-none">
             <div>
               <div className="text-sm font-medium">DNS 配置说明</div>
-              <div className="text-muted-foreground text-xs">了解策略差异，并查看当前选项将使用的 DNS</div>
+              <div className="text-muted-foreground text-xs">了解策略差异，并查看当前选项将使用的 DNS, 根据需求选择最适合您的策略搭配!</div>
             </div>
           </AccordionTrigger>
           <AccordionContent className="px-4 pb-4 space-y-6">
