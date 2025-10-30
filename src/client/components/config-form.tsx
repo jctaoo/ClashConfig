@@ -3,9 +3,8 @@ import { Button } from "@/client/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/client/components/ui/card";
 import { Input } from "@/client/components/ui/input";
 import { Label } from "@/client/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/client/components/ui/select";
 import { Switch } from "@/client/components/ui/switch";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/client/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/client/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/client/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/client/components/ui/tooltip";
 import { toast } from "sonner";
@@ -32,7 +31,7 @@ export function ConfigForm() {
   const [level, setLevel] = useState<LogLevel>("warning");
 
   // Advanced
-  const [regions, setRegions] = useState("HK,JP,US");
+  const [regions, setRegions] = useState("");
   const [rate, setRate] = useState<string>("");
   const [filter, setFilter] = useState("");
 
@@ -105,86 +104,71 @@ export function ConfigForm() {
             />
           </div>
 
-          <Tabs defaultValue="basic" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="basic">基础</TabsTrigger>
-              <TabsTrigger value="advanced">高级</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="basic" className="space-y-5 pt-4">
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label>是否优化转换</Label>
-                  <div className="flex items-center justify-between rounded-md border p-3">
-                    <div className="space-y-0.5">
-                      <div className="font-medium">配置优化</div>
-                      <div className="text-muted-foreground text-sm">启用规则与 DNS 优化</div>
-                    </div>
-                    <Switch checked={convert} onCheckedChange={setConvert} />
+          <div className="space-y-5">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label>是否优化转换</Label>
+                <div className="flex items-center justify-between rounded-md border p-3">
+                  <div className="space-y-0.5">
+                    <div className="font-medium">配置优化</div>
+                    <div className="text-muted-foreground text-sm">启用规则与 DNS 优化</div>
                   </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>HTTP/3 QUIC</Label>
-                  <div className="flex items-center justify-between rounded-md border p-3">
-                    <div className="space-y-0.5">
-                      <div className="font-medium">禁用 QUIC</div>
-                      <div className="text-muted-foreground text-sm">推荐开启以降低网络异常</div>
-                    </div>
-                    <Switch checked={quic} onCheckedChange={setQuic} />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>日志级别</Label>
-                  <Select value={level} onValueChange={(v: any) => setLevel(v)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="选择日志级别" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="debug">debug</SelectItem>
-                      <SelectItem value="info">info</SelectItem>
-                      <SelectItem value="warning">warning</SelectItem>
-                      <SelectItem value="error">error</SelectItem>
-                      <SelectItem value="silent">silent</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Switch checked={convert} onCheckedChange={setConvert} />
                 </div>
               </div>
-              
-            </TabsContent>
 
-            <TabsContent value="advanced" className="space-y-5 pt-4">
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="regions">地区优先（逗号分隔）</Label>
-                  <Input
-                    id="regions"
-                    placeholder="例如：HK,JP,US"
-                    value={regions}
-                    onChange={(e) => setRegions(e.target.value)}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="rate">最大计费倍率</Label>
-                  <Input
-                    id="rate"
-                    type="number"
-                    min={1}
-                    placeholder="例如：2"
-                    value={rate}
-                    onChange={(e) => setRate(e.target.value)}
-                  />
-                </div>
-
-                <div className="md:col-span-2 space-y-2">
-                  <Label htmlFor="filter">排除节点（正则，可选）</Label>
-                  <Input id="filter" placeholder="例如：(?i)\b(test|trial)\b" value={filter} onChange={(e) => setFilter(e.target.value)} />
+              <div className="space-y-2">
+                <Label>HTTP/3 QUIC</Label>
+                <div className="flex items-center justify-between rounded-md border p-3">
+                  <div className="space-y-0.5">
+                    <div className="font-medium">禁用 QUIC</div>
+                    <div className="text-muted-foreground text-sm">推荐开启以降低网络异常</div>
+                  </div>
+                  <Switch checked={quic} onCheckedChange={setQuic} />
                 </div>
               </div>
-            </TabsContent>
-          </Tabs>
+
+              <div className="space-y-2">
+                <Label>日志级别</Label>
+                <Tabs value={level} onValueChange={(v) => v && setLevel(v as any)} className="w-full">
+                  <TabsList className="grid w-full grid-cols-5">
+                    <TabsTrigger value="debug">debug</TabsTrigger>
+                    <TabsTrigger value="info">info</TabsTrigger>
+                    <TabsTrigger value="warning">warning</TabsTrigger>
+                    <TabsTrigger value="error">error</TabsTrigger>
+                    <TabsTrigger value="silent">silent</TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="regions">筛选地区节点（逗号分隔）</Label>
+                <Input
+                  id="regions"
+                  placeholder="例如：HK,JP,US"
+                  value={regions}
+                  onChange={(e) => setRegions(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="rate">最大计费倍率</Label>
+                <Input
+                  id="rate"
+                  type="number"
+                  min={1}
+                  placeholder="例如：2"
+                  value={rate}
+                  onChange={(e) => setRate(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="filter">排除节点（正则，可选）</Label>
+                <Input id="filter" placeholder="例如：(?i)\b(test|trial)\b" value={filter} onChange={(e) => setFilter(e.target.value)} />
+              </div>
+            </div>
+          </div>
 
         </CardContent>
       </Card>
