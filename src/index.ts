@@ -106,13 +106,17 @@ app.get(
       });
     } catch (error) {
       if (error instanceof DOMException && error.name === "AbortError") {
+        console.log(`Upstream Abort: ${error.message}`);
         const msg = `Upstream error: ${error.message}`;
         return c.text(msg, 502);
       }
       if (error instanceof Error) {
+        console.log(`Upstream Error: ${error.message}`);
         c.status(500);
         return c.text(`Internal server error: ${error.message}`);
       }
+
+      console.log(`Unknown Error: ${error}`);
       c.status(500);
       return c.text(`Internal server error`);
     }
@@ -164,11 +168,21 @@ app.get(":token", async (c) => {
       return c.text(error.message);
     }
 
+    // Handle abort error
+    if (error instanceof DOMException && error.name === "AbortError") {
+      console.log(`Upstream Abort: ${error.message}`);
+      const msg = `Upstream error: ${error.message}`;
+      return c.text(msg, 502);
+    }
+
     // Other errors return 500
     if (error instanceof Error) {
+      console.log(`Upstream Error: ${error.message}`);
       c.status(500);
       return c.text(`Internal server error: ${error.message}`);
     }
+
+    console.log(`Unknown Error: ${error}`);
     c.status(500);
     return c.text(`Internal server error`);
   }
