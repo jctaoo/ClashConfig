@@ -11,8 +11,10 @@ import { Checkbox } from "/src/client/components/ui/checkbox";
 import { Separator } from "/src/client/components/ui/separator";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "/src/client/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "/src/client/components/ui/tooltip";
+import { ToggleGroup, ToggleGroupItem } from "/src/client/components/ui/toggle-group";
 import { toast } from "sonner";
 import { Copy, ExternalLink, Eye, Link2 } from "lucide-react";
+import { DnsDocs } from "/src/client/components/dns-docs";
 
 function b64(input: string) {
   try {
@@ -127,32 +129,6 @@ export function ConfigForm() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>DNS 策略</Label>
-                  <Select value={nameserver} onValueChange={(v: any) => setNameserver(v)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="选择 DNS 策略" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="strict">严格（国内直连，国外远程）</SelectItem>
-                      <SelectItem value="direct">直连（全部走直连 DoH）</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>未命中解析</Label>
-                  <Select value={rules} onValueChange={(v: any) => setRules(v)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="选择解析策略" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="remote">按规则远程解析</SelectItem>
-                      <SelectItem value="always-resolve">总是解析</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
                   <Label>HTTP/3 QUIC</Label>
                   <div className="flex items-center justify-between rounded-md border p-3">
                     <div className="space-y-0.5">
@@ -179,6 +155,7 @@ export function ConfigForm() {
                   </Select>
                 </div>
               </div>
+              
             </TabsContent>
 
             <TabsContent value="advanced" className="space-y-5 pt-4">
@@ -213,31 +190,71 @@ export function ConfigForm() {
             </TabsContent>
           </Tabs>
 
-          <Separator />
+        </CardContent>
+      </Card>
 
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-2">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="secondary" onClick={onCopyLink}>
-                    <Copy className="mr-2 size-4" />复制链接
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>复制到剪贴板，在 Clash 中粘贴</TooltipContent>
-              </Tooltip>
-              <Button variant="outline" onClick={onOpenLink}>
-                <ExternalLink className="mr-2 size-4" />打开链接
-              </Button>
-              <Button onClick={onPreview}>
-                <Eye className="mr-2 size-4" />预览配置
-              </Button>
+      <Card className="mt-6 border-muted/60">
+        <CardHeader>
+          <CardTitle>DNS 配置</CardTitle>
+          <CardDescription>解析策略与行为说明</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label>DNS 策略</Label>
+              <Tabs value={nameserver} onValueChange={(v) => v && setNameserver(v as any)} className="w-fit">
+                <TabsList>
+                  <TabsTrigger value="strict">国际 DNS</TabsTrigger>
+                  <TabsTrigger value="direct">国内 DNS</TabsTrigger>
+                </TabsList>
+              </Tabs>
             </div>
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <Link2 className="size-3.5" />
-                <span className="truncate">{link || "将根据上方设置自动生成链接"}</span>
-              </div>
+
+            <div className="space-y-2">
+              <Label>未命中解析</Label>
+              <Tabs value={rules} onValueChange={(v) => v && setRules(v as any)} className="w-fit">
+                <TabsList>
+                  <TabsTrigger value="remote">按规则远程解析</TabsTrigger>
+                  <TabsTrigger value="always-resolve">总是解析</TabsTrigger>
+                </TabsList>
+              </Tabs>
             </div>
+          </div>
+
+          <DnsDocs nameserver={nameserver} rules={rules} />
+        </CardContent>
+      </Card>
+
+      <Card className="mt-6 border-muted/60">
+        <CardHeader>
+          <CardTitle>链接与操作</CardTitle>
+          <CardDescription>生成的订阅链接与常用操作</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="gen-link">生成的链接</Label>
+            <Input
+              id="gen-link"
+              readOnly
+              className="font-mono text-xs"
+              value={link || "将根据上方设置自动生成链接"}
+            />
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="secondary" onClick={onCopyLink}>
+                  <Copy className="mr-2 size-4" />复制链接
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>复制到剪贴板，在 Clash 中粘贴</TooltipContent>
+            </Tooltip>
+            <Button variant="outline" onClick={onOpenLink}>
+              <ExternalLink className="mr-2 size-4" />打开链接
+            </Button>
+            <Button onClick={onPreview}>
+              <Eye className="mr-2 size-4" />预览配置
+            </Button>
           </div>
         </CardContent>
       </Card>
