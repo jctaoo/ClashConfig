@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/client/compo
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/client/components/ui/tooltip";
 import { Alert, AlertDescription } from "@/client/components/ui/alert";
 import { toast } from "sonner";
-import { Copy, ExternalLink, Eye, Info } from "lucide-react";
+import { Copy, Download, Eye, Info } from "lucide-react";
 import { DnsDocs } from "@/client/components/dns-docs";
 
 function b64(input: string) {
@@ -63,12 +63,14 @@ export function ConfigForm() {
     toast.success("链接已复制，可在 Clash 中使用");
   }
 
-  function onOpenLink() {
+  function onImportToClash() {
     if (!link) {
       toast.error("请先填写订阅地址");
       return;
     }
-    window.open(link, "_blank");
+    const clashUrl = `clash://install-config?url=${encodeURIComponent(link)}`;
+    window.location.href = clashUrl;
+    toast.success("正在导入到 Clash 客户端");
   }
 
   async function onPreview() {
@@ -236,9 +238,14 @@ export function ConfigForm() {
               </TooltipTrigger>
               <TooltipContent>复制到剪贴板，在 Clash 中粘贴</TooltipContent>
             </Tooltip>
-            <Button variant="outline" onClick={onOpenLink}>
-              <ExternalLink className="mr-2 size-4" />打开链接
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="outline" onClick={onImportToClash}>
+                  <Download className="mr-2 size-4" />导入 Clash
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>直接导入到 Clash 客户端</TooltipContent>
+            </Tooltip>
             <Button onClick={onPreview}>
               <Eye className="mr-2 size-4" />预览配置
             </Button>
