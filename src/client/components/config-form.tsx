@@ -1,20 +1,16 @@
 import { useMemo, useState } from "react";
-import { Button } from "/src/client/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "/src/client/components/ui/card";
-import { Input } from "/src/client/components/ui/input";
-import { Label } from "/src/client/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "/src/client/components/ui/select";
-import { Switch } from "/src/client/components/ui/switch";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "/src/client/components/ui/tabs";
-import { Textarea } from "/src/client/components/ui/textarea";
-import { Checkbox } from "/src/client/components/ui/checkbox";
-import { Separator } from "/src/client/components/ui/separator";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "/src/client/components/ui/dialog";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "/src/client/components/ui/tooltip";
-import { ToggleGroup, ToggleGroupItem } from "/src/client/components/ui/toggle-group";
+import { Button } from "@/client/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/client/components/ui/card";
+import { Input } from "@/client/components/ui/input";
+import { Label } from "@/client/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/client/components/ui/select";
+import { Switch } from "@/client/components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/client/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/client/components/ui/dialog";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/client/components/ui/tooltip";
 import { toast } from "sonner";
-import { Copy, ExternalLink, Eye, Link2 } from "lucide-react";
-import { DnsDocs } from "/src/client/components/dns-docs";
+import { Copy, ExternalLink, Eye } from "lucide-react";
+import { DnsDocs } from "@/client/components/dns-docs";
 
 function b64(input: string) {
   try {
