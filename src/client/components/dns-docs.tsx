@@ -18,20 +18,6 @@ const foreignDoH = [
 export function DnsDocs(props: { nameserver: NameserverPolicy; rules: ResolveRules }) {
   const { nameserver, rules } = props;
 
-  const effectiveNameserver = nameserver === "direct" ? directDoH : foreignDoH;
-
-  function renderDnsBadges(list: string[]) {
-    return (
-      <div className="flex flex-wrap gap-2">
-        {list.map((d) => (
-          <Badge key={d} className="font-mono">
-            {d}
-          </Badge>
-        ))}
-      </div>
-    );
-  }
-
   function proxyBadge(text = "由代理解析") {
     return (
       <Badge variant="outline" className="font-mono">
