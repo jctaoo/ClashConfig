@@ -258,9 +258,9 @@ export function ConfigForm() {
       </Card>
 
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
-        <DialogContent className="max-w-3xl">
+        <DialogContent className="sm:max-w-4xl">
           <DialogHeader>
-            <DialogTitle>配置预览（文本）</DialogTitle>
+            <DialogTitle>配置预览</DialogTitle>
           </DialogHeader>
           <div className="max-h-[70dvh] overflow-auto rounded-md border bg-muted/30 p-3 text-sm">
             <pre className="whitespace-pre-wrap leading-relaxed">{previewContent}</pre>
