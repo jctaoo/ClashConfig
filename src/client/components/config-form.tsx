@@ -90,8 +90,8 @@ export function ConfigForm() {
     <TooltipProvider>
       <Card className="border-muted/60">
         <CardHeader>
-          <CardTitle>订阅配置</CardTitle>
-          <CardDescription>生成支持 Clash 系客户端的订阅转换链接（无需 Token）</CardDescription>
+          <CardTitle>基础配置</CardTitle>
+          <CardDescription>Clash 常规配置</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="space-y-2">

@@ -6,10 +6,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/client/components/ui/
 type NameserverPolicy = "strict" | "direct";
 type ResolveRules = "remote" | "always-resolve";
 
-const directDoH = [
-  "https://223.5.5.5/dns-query",
-  "https://doh.pub/dns-query",
-];
+const directDoH = ["https://223.5.5.5/dns-query", "https://doh.pub/dns-query"];
 const foreignDoH = [
   "https://cloudflare-dns.com/dns-query",
   "https://77.88.8.8/dns-query",
@@ -27,14 +24,20 @@ export function DnsDocs(props: { nameserver: NameserverPolicy; rules: ResolveRul
     return (
       <div className="flex flex-wrap gap-2">
         {list.map((d) => (
-          <Badge key={d} className="font-mono">{d}</Badge>
+          <Badge key={d} className="font-mono">
+            {d}
+          </Badge>
         ))}
       </div>
     );
   }
 
   function proxyBadge(text = "由代理解析") {
-    return <Badge variant="outline" className="font-mono">🛰️ {text}</Badge>;
+    return (
+      <Badge variant="outline" className="font-mono">
+        🛰️ {text}
+      </Badge>
+    );
   }
 
   function LabelTip({ text, emoji, content }: { text: string; emoji: string; content: string }) {
@@ -88,11 +91,7 @@ export function DnsDocs(props: { nameserver: NameserverPolicy; rules: ResolveRul
 
   const isDNS1 = nameserver === "strict"; // DNS1: 默认国外 DNS + nameserver-policy 分流
   const isRules1 = rules === "remote"; // Rules1: IP 规则 no-resolve，防 DNS 泄露
-  const combo = `${isRules1 ? "R1" : "R2"}+${isDNS1 ? "D1" : "D2"}` as
-    | "R1+D1"
-    | "R1+D2"
-    | "R2+D1"
-    | "R2+D2";
+  const combo = `${isRules1 ? "R1" : "R2"}+${isDNS1 ? "D1" : "D2"}` as "R1+D1" | "R1+D2" | "R2+D1" | "R2+D2";
 
   function dnsForCnHit() {
     return withOutbound("DIRECT", dnsBadgeFor(directDoH));
@@ -215,6 +214,27 @@ export function DnsDocs(props: { nameserver: NameserverPolicy; rules: ResolveRul
                   ))}
                 </TableBody>
               </Table>
+              {isDNS1 && (
+                <div className="rounded-md border border-orange-200 bg-orange-50 dark:border-orange-900 dark:bg-orange-950/30 p-3">
+                  <p className="text-xs text-orange-900 dark:text-orange-200">
+                    <span className="font-semibold">⚠️ Stash 用户注意：</span>
+                    目前 Stash 不支持
+                    <code className="px-1 py-0.5 rounded bg-orange-100 dark:bg-orange-900/50">国际 DNS</code> ，如果指定
+                    <code className="px-1 py-0.5 rounded bg-orange-100 dark:bg-orange-900/50">国际 DNS</code>
+                    ，会自动切换为
+                    <code className="px-1 py-0.5 rounded bg-orange-100 dark:bg-orange-900/50">国内 DNS</code>。
+                  </p>
+                </div>
+              )}
+              {!isDNS1 && (
+                <div className="rounded-md border border-orange-200 bg-orange-50 dark:border-orange-900 dark:bg-orange-950/30 p-3">
+                  <p className="text-xs text-orange-900 dark:text-orange-200">
+                    使用
+                    <code className="px-1 py-0.5 rounded bg-orange-100 dark:bg-orange-900/50">国内DNS</code>
+                    策略的同时最好打开禁用 QUIC 协议，因为 QUIC (UDP) 协议下 Clash 总是会进行本地 DNS 解析，可能导致 DNS 泄露
+                  </p>
+                </div>
+              )}
               <p className="text-xs text-muted-foreground">
                 参考：
                 <a
@@ -227,12 +247,9 @@ export function DnsDocs(props: { nameserver: NameserverPolicy; rules: ResolveRul
                 </a>
               </p>
             </section>
-
-            
           </AccordionContent>
         </AccordionItem>
       </Accordion>
     </div>
   );
 }
-
