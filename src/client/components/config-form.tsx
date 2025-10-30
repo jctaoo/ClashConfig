@@ -7,8 +7,9 @@ import { Switch } from "@/client/components/ui/switch";
 import { Tabs, TabsList, TabsTrigger } from "@/client/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/client/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/client/components/ui/tooltip";
+import { Alert, AlertDescription } from "@/client/components/ui/alert";
 import { toast } from "sonner";
-import { Copy, ExternalLink, Eye } from "lucide-react";
+import { Copy, ExternalLink, Eye, Info } from "lucide-react";
 import { DnsDocs } from "@/client/components/dns-docs";
 
 function b64(input: string) {
@@ -211,6 +212,12 @@ export function ConfigForm() {
           <CardDescription>生成的订阅链接与常用操作</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          <Alert>
+            <Info className="h-4 w-4" />
+            <AlertDescription>
+              ClashConfig 将根据 User-Agent 来判断不同客户端，支持 Mihomo 内核以及 Clash Premium（Stash）内核，并支持在 Stash 下的 GEOSITE 规则等的展开。
+            </AlertDescription>
+          </Alert>
           <div className="space-y-2">
             <Label htmlFor="gen-link">生成的链接</Label>
             <Input
