@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { Switch } from "@/client/components/ui/switch";
 import { Separator } from "@/client/components/ui/separator";
 
@@ -19,7 +20,9 @@ export function AppHeader() {
     <header className="sticky top-0 z-10 w-full bg-background/80 backdrop-blur supports-backdrop-filter:bg-background/60">
       <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
         <div className="flex items-center gap-2">
-          <span className="text-lg font-semibold tracking-tight">ClashConfig</span>
+          <Link to="/" className="text-lg font-semibold tracking-tight hover:opacity-90">
+            ClashConfig
+          </Link>
           <Separator orientation="vertical" className="mx-2 h-5" />
         </div>
         <div className="flex items-center gap-2 text-sm">
