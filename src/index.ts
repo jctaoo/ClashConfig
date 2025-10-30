@@ -59,7 +59,8 @@ app.get(
   async (c) => {
     const params = c.req.valid("query");
 
-    const userAgent = c.req.header("User-Agent");
+    // Support X-Preview-UA for preview in browser
+    const userAgent = c.req.header("X-Preview-UA") || c.req.header("User-Agent");
 
     const [clientType, clientPlatform] = checkUserAgent(userAgent ?? "");
 
@@ -120,7 +121,8 @@ app.get(
 
 app.get(":token", async (c) => {
   const token = c.req.param("token");
-  const userAgent = c.req.header("User-Agent");
+  // Support X-Preview-UA for preview in browser
+  const userAgent = c.req.header("X-Preview-UA") || c.req.header("User-Agent");
   const [clientType, clientPlatform] = checkUserAgent(userAgent ?? "");
 
   if (!clientType) {

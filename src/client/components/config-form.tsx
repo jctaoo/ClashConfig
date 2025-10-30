@@ -79,7 +79,11 @@ export function ConfigForm() {
       return;
     }
     try {
-      const res = await fetch(link);
+      const res = await fetch(link, {
+        headers: {
+          "X-Preview-UA": "clash-verge/v2.0.0",
+        },
+      });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const txt = await res.text();
       setPreviewContent(txt);
