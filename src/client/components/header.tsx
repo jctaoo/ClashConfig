@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { Switch } from "@/client/components/ui/switch";
 import { Separator } from "@/client/components/ui/separator";
 import { Button } from "@/client/components/ui/button";
-import { Key } from "lucide-react";
+import { Key, Github } from "lucide-react";
 import { TokenManagementDialog } from "@/client/components/token-management-dialog";
 
 export function AppHeader() {
@@ -31,6 +31,21 @@ export function AppHeader() {
           <Separator orientation="vertical" className="mx-2 h-5" />
         </div>
         <div className="flex items-center gap-4">
+          <Button
+            variant="ghost"
+            size="sm"
+            asChild
+          >
+            <a
+              href="https://github.com/jctaoo/ClashConfig"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm"
+            >
+              <Github className="mr-2 h-4 w-4" />
+              Star
+            </a>
+          </Button>
           <Button
             variant="ghost"
             size="sm"
