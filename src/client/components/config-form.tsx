@@ -11,6 +11,7 @@ import { Alert, AlertDescription } from "@/client/components/ui/alert";
 import { toast } from "sonner";
 import { Copy, Download, Eye, Info } from "lucide-react";
 import { DnsDocs } from "@/client/components/dns-docs";
+import Editor from "@monaco-editor/react";
 
 function b64(input: string) {
   try {
@@ -262,8 +263,22 @@ export function ConfigForm() {
           <DialogHeader>
             <DialogTitle>配置预览</DialogTitle>
           </DialogHeader>
-          <div className="max-h-[70dvh] overflow-auto rounded-md border bg-muted/30 p-3 text-sm">
-            <pre className="whitespace-pre-wrap leading-relaxed">{previewContent}</pre>
+          <div className="h-[70dvh] overflow-hidden rounded-md border">
+            <Editor
+              height="100%"
+              defaultLanguage="yaml"
+              value={previewContent}
+              theme="vs-dark"
+              options={{
+                readOnly: true,
+                minimap: { enabled: false },
+                scrollBeyondLastLine: false,
+                fontSize: 13,
+                lineNumbers: "on",
+                renderLineHighlight: "none",
+                overviewRulerBorder: false,
+              }}
+            />
           </div>
         </DialogContent>
       </Dialog>
