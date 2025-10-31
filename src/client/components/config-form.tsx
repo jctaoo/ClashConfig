@@ -5,13 +5,12 @@ import { Input } from "@/client/components/ui/input";
 import { Label } from "@/client/components/ui/label";
 import { Switch } from "@/client/components/ui/switch";
 import { Tabs, TabsList, TabsTrigger } from "@/client/components/ui/tabs";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/client/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/client/components/ui/tooltip";
 import { Alert, AlertDescription } from "@/client/components/ui/alert";
 import { toast } from "sonner";
 import { Copy, Download, Eye, Info } from "lucide-react";
 import { DnsDocs } from "@/client/components/dns-docs";
-import Editor from "@monaco-editor/react";
+import { ConfigPreviewDialog } from "@/client/components/config-preview-dialog";
 
 function b64(input: string) {
   try {
@@ -38,7 +37,6 @@ export function ConfigForm() {
   const [filter, setFilter] = useState("");
 
   const [previewOpen, setPreviewOpen] = useState(false);
-  const [previewContent, setPreviewContent] = useState<string>("");
 
   const link = useMemo(() => {
     if (!subUrl) return "";
@@ -79,19 +77,7 @@ export function ConfigForm() {
       toast.error("请先填写订阅地址");
       return;
     }
-    try {
-      const res = await fetch(link, {
-        headers: {
-          "X-Preview-UA": "clash-verge/v2.0.0",
-        },
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const txt = await res.text();
-      setPreviewContent(txt);
-      setPreviewOpen(true);
-    } catch (e: any) {
-      toast.error(e?.message ?? "预览失败");
-    }
+    setPreviewOpen(true);
   }
 
   return (
@@ -225,6 +211,12 @@ export function ConfigForm() {
               ClashConfig 将根据 User-Agent 来判断不同客户端，支持 Mihomo 内核以及 Clash Premium（Stash）内核，并支持在 Stash 下的 GEOSITE 规则等的展开。
             </AlertDescription>
           </Alert>
+          <Alert>
+            <Info className="h-4 w-4" />
+            <AlertDescription>
+              使用裸核时，将 mihomo -v 的内容作为 User-Agent 请求订阅链接即可。
+            </AlertDescription>
+          </Alert>
           <div className="space-y-2">
             <Label htmlFor="gen-link">生成的链接</Label>
             <Input
@@ -258,30 +250,7 @@ export function ConfigForm() {
         </CardContent>
       </Card>
 
-      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
-        <DialogContent className="sm:max-w-4xl">
-          <DialogHeader>
-            <DialogTitle>配置预览</DialogTitle>
-          </DialogHeader>
-          <div className="h-[70dvh] overflow-hidden rounded-md border">
-            <Editor
-              height="100%"
-              defaultLanguage="yaml"
-              value={previewContent}
-              theme="vs-dark"
-              options={{
-                readOnly: true,
-                minimap: { enabled: false },
-                scrollBeyondLastLine: false,
-                fontSize: 13,
-                lineNumbers: "on",
-                renderLineHighlight: "none",
-                overviewRulerBorder: false,
-              }}
-            />
-          </div>
-        </DialogContent>
-      </Dialog>
+      <ConfigPreviewDialog open={previewOpen} onOpenChange={setPreviewOpen} url={link} />
     </TooltipProvider>
   );
 }
