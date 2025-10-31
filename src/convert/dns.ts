@@ -42,6 +42,7 @@ const extraFakeIpFilters = [
   "time1.cloud.tencent.com",
   // QQ 系列游戏相关
   "pingfore.qq.com",
+  "localhost.weixin.qq.com",
   // 微信快速登录检测失败 (private, 与 connectivity check 不包含)
   "localhost.work.weixin.qq.com",
 ];
