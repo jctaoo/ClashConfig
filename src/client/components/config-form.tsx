@@ -8,9 +8,10 @@ import { Tabs, TabsList, TabsTrigger } from "@/client/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/client/components/ui/tooltip";
 import { Alert, AlertDescription } from "@/client/components/ui/alert";
 import { toast } from "sonner";
-import { Copy, Download, Eye, Info } from "lucide-react";
+import { Copy, Download, Eye, Info, QrCode } from "lucide-react";
 import { DnsDocs } from "@/client/components/dns-docs";
 import { ConfigPreviewDialog } from "@/client/components/config-preview-dialog";
+import { QRCodeDialog } from "@/client/components/qrcode-dialog";
 
 function b64(input: string) {
   try {
@@ -37,6 +38,7 @@ export function ConfigForm() {
   const [filter, setFilter] = useState("");
 
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [qrcodeOpen, setQrcodeOpen] = useState(false);
 
   const link = useMemo(() => {
     if (!subUrl) return "";
@@ -78,6 +80,14 @@ export function ConfigForm() {
       return;
     }
     setPreviewOpen(true);
+  }
+
+  function onShowQRCode() {
+    if (!link) {
+      toast.error("请先填写订阅地址");
+      return;
+    }
+    setQrcodeOpen(true);
   }
 
   return (
@@ -246,11 +256,20 @@ export function ConfigForm() {
             <Button onClick={onPreview}>
               <Eye className="mr-2 size-4" />预览配置
             </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="outline" onClick={onShowQRCode}>
+                  <QrCode className="mr-2 size-4" />二维码
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>显示订阅链接二维码</TooltipContent>
+            </Tooltip>
           </div>
         </CardContent>
       </Card>
 
       <ConfigPreviewDialog open={previewOpen} onOpenChange={setPreviewOpen} url={link} />
+      <QRCodeDialog open={qrcodeOpen} onOpenChange={setQrcodeOpen} url={link} />
     </TooltipProvider>
   );
 }
