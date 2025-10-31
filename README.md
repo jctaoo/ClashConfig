@@ -28,6 +28,35 @@ https://clash.jctaoo.site/sub?sub=<base64-encoded-url>
 
 ## 🖥️ API 指南
 
+### 📱 User-Agent 说明
+
+ClashConfig 会**根据请求的 User-Agent 自动识别客户端类型**，并返回对应内核的优化配置：
+
+#### 支持的客户端内核
+
+1. **Clash.Meta (Mihomo)**:
+   - 客户端：Clash Verge、ClashX.Meta 等
+   - 返回：完整的 Mihomo 内核配置，包含所有高级特性
+
+2. **Clash Premium (Stash)**
+   - 客户端：Stash
+   - 返回：兼容 Stash 的配置，自动展开 `GEOSITE` 规则为具体域名列表 (nameserver-policy 中)
+   - **特殊处理**：由于 Stash 限制，`strict` DNS 策略会自动降级为 `direct` 策略
+
+#### 裸核心使用方法
+
+如果你直接使用 Clash 核心（如 `mihomo`）而不是带 UI 的客户端，需要**手动指定 User-Agent**, 将 `mihomo -v` 命令的第一行返回值作为 User-Agent 使用即可，例如:
+
+```bash
+> ./mihomo.exe -v
+Mihomo Meta v1.19.14 windows amd64 with go1.24.7 Wed Sep 24 09:12:02UTC 2025
+Use tags: with_gvisor
+```
+
+将 `Mihomo Meta v1.19.14 windows amd64 with go1.24.7 Wed Sep 24 09:12:02UTC 2025` 作为 User-Agent 进行请求即可。
+
+> 💡 **提示**：大多数 Clash 客户端会自动发送正确的 User-Agent，无需手动设置
+
 ### 1. `/sub` - 基础订阅转换
 
 **功能**: 将机场订阅地址转换为优化后的 Clash 配置
