@@ -1,0 +1,3 @@
+# robots.txt for ClashConfig
+User-agent: *
+Allow: /
