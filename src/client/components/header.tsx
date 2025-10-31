@@ -2,6 +2,9 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Switch } from "@/client/components/ui/switch";
 import { Separator } from "@/client/components/ui/separator";
+import { Button } from "@/client/components/ui/button";
+import { Key } from "lucide-react";
+import { TokenManagementDialog } from "@/client/components/token-management-dialog";
 
 export function AppHeader() {
   const [dark, setDark] = useState<boolean>(() =>
@@ -9,6 +12,8 @@ export function AppHeader() {
       ? document.documentElement.classList.contains("dark")
       : false,
   );
+
+  const [tokenDialogOpen, setTokenDialogOpen] = useState(false);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -25,12 +30,26 @@ export function AppHeader() {
           </Link>
           <Separator orientation="vertical" className="mx-2 h-5" />
         </div>
-        <div className="flex items-center gap-2 text-sm">
-          <span className="text-muted-foreground hidden sm:inline">Dark</span>
-          <Switch checked={dark} onCheckedChange={setDark} aria-label="Toggle theme" />
+        <div className="flex items-center gap-4">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setTokenDialogOpen(true)}
+            className="text-sm"
+          >
+            <Key className="mr-2 h-4 w-4" />
+            <span className="hidden sm:inline">管理 Token</span>
+            <span className="sm:hidden">Token</span>
+          </Button>
+          <div className="flex items-center gap-2 text-sm">
+            <span className="text-muted-foreground hidden sm:inline">Dark</span>
+            <Switch checked={dark} onCheckedChange={setDark} aria-label="Toggle theme" />
+          </div>
         </div>
       </div>
       <Separator />
+      
+      <TokenManagementDialog open={tokenDialogOpen} onOpenChange={setTokenDialogOpen} />
     </header>
   );
 }
