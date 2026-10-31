@@ -14,12 +14,6 @@ export function rules({ dnsRules, disableQuic }: { dnsRules: DNSPolicy["rules"];
   };
   // 规则集配置
   const ruleProviders = {
-    reject: {
-      ...ruleProviderCommon,
-      behavior: "domain",
-      url: "https://fastly.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/reject.txt",
-      path: "./ruleset/loyalsoldier/reject.yaml",
-    },
     icloud: {
       ...ruleProviderCommon,
       behavior: "domain",
@@ -55,12 +49,6 @@ export function rules({ dnsRules, disableQuic }: { dnsRules: DNSPolicy["rules"];
       behavior: "domain",
       url: "https://fastly.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/gfw.txt",
       path: "./ruleset/loyalsoldier/gfw.yaml",
-    },
-    "tld-not-cn": {
-      ...ruleProviderCommon,
-      behavior: "domain",
-      url: "https://fastly.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/tld-not-cn.txt",
-      path: "./ruleset/loyalsoldier/tld-not-cn.yaml",
     },
     telegramcidr: {
       ...ruleProviderCommon,
@@ -161,15 +149,12 @@ export function rules({ dnsRules, disableQuic }: { dnsRules: DNSPolicy["rules"];
     "GEOSITE,category-games@cn,🇨🇳 国内网站",
     // Loyalsoldier 规则集
     "RULE-SET,applications,🔗 全局直连",
-    // "RULE-SET,reject,🥰 广告过滤",
     "RULE-SET,microsoft,Ⓜ️ 微软服务",
     "RULE-SET,icloud,🍎 苹果服务",
     "RULE-SET,apple,🍎 苹果服务",
     "RULE-SET,google,📢 谷歌服务",
     "RULE-SET,proxy,🔰 模式选择",
     "RULE-SET,gfw,🔰 模式选择",
-    // 非中国大陆使用的顶级域名，比如 .ai
-    // "RULE-SET,tld-not-cn,🔰 模式选择",
     // other
     "RULE-SET,direct,🇨🇳 国内网站",
     "GEOSITE,private,🔗 全局直连",

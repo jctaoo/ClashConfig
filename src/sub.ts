@@ -5,15 +5,12 @@ import { ClientCoreType, clientCoreType, ClientType } from "./client";
 import { DNSPolicy } from "./convert/dns";
 import { formatDateTime, parseYAML, dumpYAML } from "./utils";
 import { AnyJson } from "./convert/type";
-import {
-  parseSubHeaders,
-  getSubContent,
-  SubHeaders,
-  CachedSubContent,
-} from "./subShared";
+import { parseSubHeaders, getSubContent } from "./subShared";
+import type { CachedSubContent } from "./subShared";
 
 // Re-export shared types and functions for backward compatibility
-export { parseSubHeaders, getSubContent, SubHeaders, CachedSubContent };
+export { parseSubHeaders, getSubContent };
+export type { SubHeaders, CachedSubContent } from "./subShared";
 
 /**
  * Token 配置的 metadata
