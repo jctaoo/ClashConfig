@@ -7,7 +7,7 @@
 ## ✨ 特性
 
 - 🚀 **无服务器部署**: 基于 Cloudflare Workers，全球加速访问
-- 📦 **跨平台使用**: 支持 **Clash.Meta** 和 **Clash Premium** (Stash App) 内核
+- 📦 **跨平台使用**: 提供 **Mihomo (Clash.Meta)** 和 **Stash** 的配置分支，具体差异见 [内核能力与当前适配范围](#core-compatibility)
 - 🎯 **智能规则**: 内置优化的分流规则，支持 GEOIP、GEOSITE 数据，多 DNS 与分流规则可配置
 - 🔒 **安全的网络体验**: 避免 DNS 泄露
 - 🌍 **地区筛选**: 支持按地区过滤节点
@@ -36,12 +36,12 @@ ClashConfig 会**根据请求的 User-Agent 自动识别客户端类型**，并�
 
 1. **Clash.Meta (Mihomo)**:
    - 客户端：Clash Verge、ClashX.Meta 等
-   - 返回：完整的 Mihomo 内核配置，包含所有高级特性
+   - 返回：Mihomo 配置分支，根据客户端与平台补充 TUN 等配置, 包含所有高级特性
 
 2. **Clash Premium (Stash)**
    - 客户端：Stash
    - 返回：兼容 Stash 的配置，自动展开 `GEOSITE` 规则为具体域名列表 (nameserver-policy 中)
-   - **特殊处理**：由于 Stash 限制，`strict` DNS 策略会自动降级为 `direct` 策略
+   - 当前实现将 `strict` DNS 选项按 `direct` 生成，客户端能力与项目限制见 [下表](#core-compatibility)
 
 #### 裸核心使用方法
 
@@ -195,6 +195,43 @@ pnpm run cli list
 - **KV Key 格式**: `kv:{SHA256(用户Token)}`
 - **存储值**: JSON 格式的 `ClashSubInformation` 对象
 
+### Token 落地代理
+
+Token 配置支持可选的 `landingProxies` 数组。运行 `pnpm run cli update sk-your-token`，在现有 JSON 中加入以下字段；`pnpm run cli add` 也可以选择通过编辑器配置落地数组。
+
+```json
+{
+  "landingProxies": [
+    {
+      "name": "🇸🇬 新加坡落地",
+      "viaRegion": "hk",
+      "proxy": {
+        "type": "socks5",
+        "server": "example.com",
+        "port": 443,
+        "username": "your-username",
+        "password": "your-password",
+        "udp": false
+      }
+    }
+  ]
+}
+```
+
+这只是需要新增的字段，编辑时保留原有的 `token`、`url`、`filter` 等字段。保存后继续使用原来的 Token 订阅链接。
+
+- `name` 是独立落地选择组的名称；对应节点名称自动生成为 `${name}节点`，两者都不能与已有节点或策略组重名。
+- `viaRegion` 是前置机场地区，支持 `hk`、`mo`、`jp`、`tw`、`sg`、`us`、`gb`、`de`、`fr`、`nl`、`kr`、`au`、`ca`，大小写均可。前置地区仍须满足 Token 的地区、倍率和名称过滤条件；筛选后为空会返回配置错误。
+- 首版落地协议为 `socks5`，`server` 支持域名或 IP，`port` 必须为 1–65535 的整数；`username`、`password` 可选。`udp` 默认关闭，启用后还需前置节点与落地服务共同支持 UDP。
+- 多个落地分别生成独立选择组，加入国外媒体、AI、Google AI、Bybit、PikPak、电报、谷歌、苹果、微软九个业务组。更新订阅后，在 Mihomo 面板中为需要的业务选择落地组；原来的默认选项顺序保持不变。
+- 示例链路为：`本机 → 香港机场节点 → 新加坡 SOCKS5 落地 → 目标网站`。具体香港前置节点在“🇭🇰 香港节点”组中选择。
+- 启用落地后，延迟选优、故障转移和负载均衡仅使用筛选后的机场节点，落地节点不进入普通地区组或自动策略候选。
+- 删除 `landingProxies` 字段或设为 `[]` 可停用。当前服务对带落地的 Token 有客户端限制，详见 [内核能力与当前适配范围](#core-compatibility)。
+
+落地配置仅通过 Token 管理，`/sub` 的 URL 参数和网页表单不提供此入口。持有 Token 订阅链接的人可以获取包含落地凭据的生成配置。
+
+实现使用 Mihomo 的 [`dialer-proxy`](https://wiki.metacubex.one/config/proxies/dialer-proxy/) 和 [SOCKS5 出站配置](https://wiki.metacubex.one/config/proxies/socks/)。
+
 ### 示例：完整工作流
 
 ```bash
@@ -291,6 +328,15 @@ pnpm run cli delete sk-your-token
    开发服务器将在本地启动，可以进行调试和测试。
 
 
+
+### 本地测试
+
+测试使用 Vitest 在 Node.js 环境中运行。`vitest.config.ts` 将 `cloudflare:workers` 映射为内存 KV 替身，用于验证配置生成和 Token 路由逻辑；测试不访问远端 KV 或订阅，也不在 workerd 中执行。
+
+```bash
+pnpm test
+pnpm run test:watch
+```
 
 ## 🎯 TODO
 

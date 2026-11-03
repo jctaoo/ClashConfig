@@ -1,34 +1,12 @@
-// prettier-ignore
-
-import { env } from "cloudflare:workers";
-import { ClashSubInformation } from "../sub";
-import { dnsConfig, DNSPolicy, DNSPolicySchema } from "./dns";
+import type { ClashSubInformation } from "../sub";
+import { dnsConfig, type DNSPolicy } from "./dns";
 import type { AnyJson } from "./type";
 import { generalConfig } from "./general";
-import { ClientCoreType, clientCoreType, ClientType, isBareCore } from "../client";
+import { ClientType, isBareCore } from "../client";
 import { rules } from "./rules";
-
-// prettier-ignore
-const REGIONS = [
-  { id: "hk", name: "香港", regexes: [/\bHK\b/i, /香港/i, /hong\s*kong/i], emoji: "🇭🇰" },
-  { id: "mo", name: "澳门", regexes: [/\bMO\b/i, /澳門|澳门/i, /macao|macau/i], emoji: "🇲🇴" },
-  { id: "jp", name: "日本", regexes: [/\bJP\b/i, /日本|japan/i, /tokyo|osaka|nagoya/i], emoji: "🇯🇵" },
-  { id: "tw", name: "台湾", regexes: [/\bTW\b/i, /台灣|台湾|taiwan/i, /taipei|taichung|kaohsiung/i], emoji: "🇹🇼" },
-  { id: "sg", name: "新加坡", regexes: [/\bSG\b/i, /新加坡|singapore/i], emoji: "🇸🇬" },
-  { id: "us", name: "美国", regexes: [/\bUS\b|\bUSA\b/i, /美国|united\s*states|america/i, /los\s*angeles|san\s*francisco|new\s*york|seattle|chicago|dallas|miami/i], emoji: "🇺🇸" },
-  { id: "gb", name: "英国", regexes: [/\bUK\b/i, /英国|united\s*kingdom|london/i], emoji: "🇬🇧" },
-  { id: "de", name: "德国", regexes: [/\bDE\b/i, /德国|germany|frankfurt|munich|berlin/i], emoji: "🇩🇪" },
-  { id: "fr", name: "法国", regexes: [/\bFR\b/i, /法国|france|paris/i], emoji: "🇫🇷" },
-  { id: "nl", name: "荷兰", regexes: [/\bNL\b/i, /荷兰|netherlands|amsterdam/i], emoji: "🇳🇱" },
-  { id: "kr", name: "韩国", regexes: [/\bKR\b/i, /韩国|korea|seoul/i], emoji: "🇰🇷" },
-  { id: "au", name: "澳大利亚", regexes: [/\bAU\b/i, /澳大利亚|australia|sydney|melbourne/i], emoji: "🇦🇺" },
-  { id: "ca", name: "加拿大", regexes: [/\bCA\b/i, /加拿大|canada|toronto|vancouver|montreal/i], emoji: "🇨🇦" },
-
-  // { id: "my", name: "马来西亚", regexes: [/\bMY\b/i, /马来西亚|malaysia/i], emoji: "🇲🇾" },
-  // { id: "th", name: "泰国", regexes: [/\bTH\b/i, /泰国|thailand/i], emoji: "🇹🇭" },
-
-  // 可继续加入更多国家...
-];
+import { REGIONS, regionGroupName } from "./regions";
+import { parseLandingProxies, type LandingProxy } from "../landingProxies";
+import { buildLandingProxies, validateProxyReferences } from "./landing";
 
 const UNKNOWN_REGION = {
   name: "未知",
@@ -37,7 +15,10 @@ const UNKNOWN_REGION = {
 };
 
 function normalizeName(name: string): string {
-  if (!name || typeof name !== "string") return "";
+  if (!name || typeof name !== "string") {
+    return "";
+  }
+
   // 删除 emoji（简单方式：剔除高位 unicode，这里做基本处理）
   // NOTE: 这不是 100% 完整的 emoji 移除，但对常见 emoji 有效
   const noEmoji = name.replace(/[\u{1F300}-\u{1F6FF}\u{1F900}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, "");
@@ -66,7 +47,7 @@ function replaceConfig(config: AnyJson, patch: AnyJson) {
   }
 }
 
-function proxyGroups(proxies: AnyJson[], usingSvgIcon: boolean) {
+function proxyGroups(proxies: AnyJson[], usingSvgIcon: boolean, landingProxies: LandingProxy[]) {
   // 代理组通用配置
   const groupBaseOption = {
     interval: 0,
@@ -77,14 +58,18 @@ function proxyGroups(proxies: AnyJson[], usingSvgIcon: boolean) {
     hidden: false,
   };
 
+  const landingGroupNames = landingProxies.map((landing) => landing.name);
+
   function generateRuleBasedGroup(name: string, options: AnyJson) {
-    return {
+    const group = {
       ...groupBaseOption,
       name: name,
       type: "select",
       proxies: ["🔰 模式选择", "⚙️ 节点选择", "🔗 全局直连", ...modeNames],
       ...options,
     };
+
+    return { ...group, proxies: [...group.proxies, ...landingGroupNames] };
   }
 
   const regionsToProxies: Record<string, AnyJson[]> = {};
@@ -123,7 +108,7 @@ function proxyGroups(proxies: AnyJson[], usingSvgIcon: boolean) {
 
     return {
       ...groupBaseOption,
-      name: `${region.emoji} ${region.name}节点`,
+      name: regionGroupName(region),
       type: "select",
       proxies: proxies.map((proxy) => proxy.name),
       icon: icon,
@@ -280,9 +265,16 @@ function proxyGroups(proxies: AnyJson[], usingSvgIcon: boolean) {
     }
   }
 
-  return {
-    "proxy-groups": proxyGroupsConfig,
-  };
+  if (landingProxies.length === 0) {
+    return { "proxy-groups": proxyGroupsConfig };
+  }
+
+  const landing = buildLandingProxies(landingProxies, regionBasedGroups);
+  const allProxies = [...proxies, ...landing.proxies];
+  const allGroups = [...landing.groups.map((group) => ({ ...groupBaseOption, ...group })), ...proxyGroupsConfig];
+  validateProxyReferences(allProxies, allGroups);
+
+  return { proxies: allProxies, "proxy-groups": allGroups };
 }
 
 function filterNodes(cfg: AnyJson, filter: ClashSubInformation["filter"]) {
@@ -342,9 +334,11 @@ export function convertClashConfig(options: {
     lookupGeoSite: (code: string) => string[];
   };
   filter?: ClashSubInformation["filter"];
+  landingProxies?: LandingProxy[];
 }): AnyJson {
-  const { config, profile, dnsPolicy, disableQuic, logLevel, clientPlatform, clientType, extra, filter } = options;
+  const { config, dnsPolicy, disableQuic, logLevel, clientPlatform, clientType, extra, filter } = options;
 
+  const landingProxies = parseLandingProxies(options.landingProxies);
   const bareCore = isBareCore(clientType);
 
   // do filter
@@ -357,6 +351,9 @@ export function convertClashConfig(options: {
   // General Config
   mergeConfig(config, generalConfig(bareCore, logLevel));
 
+  // 地区组使用过滤后的机场节点，落地节点在其后接入。
+  replaceConfig(config, proxyGroups(config["proxies"], clientType !== ClientType.Stash, landingProxies));
+
   // Config DNS
   config.dns = dnsConfig(
     dnsPolicy.nameserver,
@@ -367,9 +364,8 @@ export function convertClashConfig(options: {
     extra.lookupGeoSite,
   );
 
-  // Config Proxy Groups and rules
+  // Config rules
   replaceConfig(config, rules({ dnsRules: dnsPolicy.rules, disableQuic }));
-  replaceConfig(config, proxyGroups(config["proxies"], clientType !== ClientType.Stash)); // stash not support svg icon
 
   // remove hosts
   delete config["hosts"];

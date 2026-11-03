@@ -1,18 +1,12 @@
 import { Hono } from "hono";
-import {
-  convertSub,
-  getOrFetchSubContent,
-  getSubContent,
-  parseSubHeaders,
-  TokenNotFoundError,
-  JSONParseError,
-} from "./sub";
-import { checkUserAgent, ClientType } from "./client";
+import { convertSub, getOrFetchSubContent, getSubContent, TokenNotFoundError, JSONParseError } from "./sub";
+import { checkUserAgent } from "./client";
 import { logger } from "hono/logger";
 import { DNSPolicySchema } from "./convert/dns";
-import z, { ZodError } from "zod";
+import z from "zod";
 import { validator } from "hono/validator";
 import { timing } from "hono/timing";
+import { LandingProxyConfigError } from "./landingProxies";
 
 const app = new Hono();
 
@@ -30,9 +24,7 @@ const SubQuerySchema = z.object({
     .enum(["true", "false"])
     .default("true")
     .transform((val) => val === "true"),
-  level: z
-    .enum(["debug", "info", "warning", "error", "silent"])
-    .default("warning"),
+  level: z.enum(["debug", "info", "warning", "error", "silent"]).default("warning"),
 
   regions: z
     .string("regions code divided by comma")
@@ -41,8 +33,6 @@ const SubQuerySchema = z.object({
   rate: z.coerce.number().int().positive().optional(),
   filter: z.string().optional(),
 });
-
-
 
 /**
  * Basic clash config converter
@@ -93,7 +83,7 @@ app.get(
             maxBillingRate: params.rate,
             regions: params.regions,
             excludeRegex: params.filter,
-          }
+          },
         });
       } else {
         // 不进行配置优化，但是会转化为客户端配置
@@ -139,7 +129,7 @@ app.get(":token", async (c) => {
     const { city, country } = c.req.raw.cf ?? {};
     console.log(`Retrieving subscription content from ${city}, ${country}`, { userAgent });
     const { content, headers, subInfo } = await getOrFetchSubContent(token, userAgent!);
-    
+
     const dnsPolicy = DNSPolicySchema.parse(subInfo.dnsPolicy ?? {});
     const logLevel = subInfo.logLevel ?? "warning";
 
@@ -150,6 +140,7 @@ app.get(":token", async (c) => {
       dnsPolicy,
       disableQuic: subInfo.disableQuic ?? true,
       logLevel,
+      landingProxies: subInfo.landingProxies,
     });
 
     // Use subInfo.label as the filename in Content-Disposition header
@@ -161,8 +152,12 @@ app.get(":token", async (c) => {
       "Content-Type": "text/yaml; charset=utf-8",
     });
   } catch (error) {
-    // Token not found or JSON parse error should return 400
-    if (error instanceof TokenNotFoundError || error instanceof JSONParseError) {
+    // Token 或配置错误由调用方修正。
+    if (
+      error instanceof TokenNotFoundError ||
+      error instanceof JSONParseError ||
+      error instanceof LandingProxyConfigError
+    ) {
       console.log(`Bad request: ${error.message}`);
       c.status(400);
       return c.text(error.message);

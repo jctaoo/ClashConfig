@@ -9,6 +9,7 @@ import { getSubContent } from "./src/subShared";
 import { parseYAML } from "./src/utils";
 import { z } from "zod";
 import { DNSPolicySchema } from "./src/convert/dns";
+import { LandingProxiesSchema, parseLandingProxies, type LandingProxy } from "./src/landingProxies";
 
 const execAsync = promisify(exec);
 
@@ -40,6 +41,7 @@ const ClashSubInformationSchema = z.object({
     .optional(),
   disableQuic: z.boolean().optional(),
   logLevel: z.enum(["debug", "info", "warning", "error", "silent"]).optional(),
+  landingProxies: LandingProxiesSchema.optional(),
 });
 
 const KV_BINDING = "KV";
@@ -229,6 +231,10 @@ function logSubInfo(subInfo: ClashSubInformationCLI, kvKey?: string): void {
   if (subInfo.logLevel) {
     console.log(`  📝 Log Level:       ${subInfo.logLevel}`);
   }
+
+  for (const landing of subInfo.landingProxies ?? []) {
+    console.log(`  🛬 Landing Proxy:   ${landing.name} (${landing.proxy.type}, via ${landing.viaRegion})`);
+  }
 }
 
 // CLI Commands
@@ -360,6 +366,38 @@ yargs(hideBin(process.argv))
         logLevel = logLevelResult.data;
       }
 
+      const configureLandingProxies = await confirm({
+        message: "Configure SOCKS5 landing proxies?",
+        default: false,
+      });
+
+      let landingProxies: LandingProxy[] | undefined;
+      if (configureLandingProxies) {
+        console.log("See README for the landingProxies JSON format. Set viaRegion to the airport region, e.g. hk.");
+        const content = await editor({
+          message: "Landing proxies (JSON array):",
+          default: "[]",
+          postfix: ".json",
+          waitForUseInput: false,
+          validate: (value) => {
+            let parsed: unknown;
+            try {
+              parsed = JSON.parse(value);
+            } catch {
+              return "Invalid JSON";
+            }
+
+            try {
+              parseLandingProxies(parsed);
+              return true;
+            } catch (error) {
+              return error instanceof Error ? error.message : "Invalid landing proxy configuration";
+            }
+          },
+        });
+        landingProxies = parseLandingProxies(JSON.parse(content));
+      }
+
       // Generate a new token
       const token = generateToken();
       const kvKey = getKVKey(token);
@@ -377,6 +415,7 @@ yargs(hideBin(process.argv))
         dnsPolicy: dnsPolicy,
         disableQuic: configureQuic,
         logLevel: logLevel,
+        landingProxies,
       };
 
       // Validate the complete subscription info with Zod
@@ -517,6 +556,7 @@ yargs(hideBin(process.argv))
         dnsPolicy: existingSubInfo.dnsPolicy || { nameserver: "strict", rules: "remote" },
         disableQuic: existingSubInfo.disableQuic !== undefined ? existingSubInfo.disableQuic : true,
         logLevel: existingSubInfo.logLevel || "warning",
+        landingProxies: existingSubInfo.landingProxies ?? [],
       };
 
       const editedContent = await editor({

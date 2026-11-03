@@ -1,12 +1,12 @@
 import { env } from "cloudflare:workers";
 import { convertClashConfig } from "./convert/convert";
-import { extractGeoDomains } from "./geo/geoHelper";
 import { ClientCoreType, clientCoreType, ClientType } from "./client";
 import { DNSPolicy } from "./convert/dns";
 import { formatDateTime, parseYAML, dumpYAML } from "./utils";
 import { AnyJson } from "./convert/type";
 import { parseSubHeaders, getSubContent } from "./subShared";
 import type { CachedSubContent } from "./subShared";
+import { parseLandingProxies, type LandingProxy } from "./landingProxies";
 
 // Re-export shared types and functions for backward compatibility
 export { parseSubHeaders, getSubContent };
@@ -76,6 +76,8 @@ export interface ClashSubInformation {
   disableQuic?: boolean;
   /** 日志等级 */
   logLevel?: "debug" | "info" | "warning" | "error" | "silent";
+  /** 通过机场地区组连接的 SOCKS5 落地代理 */
+  landingProxies?: LandingProxy[];
 }
 
 export interface SubContentWithInfo extends CachedSubContent {
@@ -99,12 +101,14 @@ export async function convertSub(
     dnsPolicy: DNSPolicy;
     disableQuic: boolean;
     logLevel: "debug" | "info" | "warning" | "error" | "silent";
+    landingProxies?: LandingProxy[];
   },
 ): Promise<string> {
   const startTime = performance.now();
 
   try {
-    console.log(`Converting subscription for profile: ${profile}`, options);
+    const { clientType, clientPlatform, filter, dnsPolicy, disableQuic, logLevel, landingProxies } = options;
+    console.log(`Converting subscription for profile: ${profile}`);
 
     // 根据类型自适应：如果是字符串则解析，否则直接使用
     let cfg: AnyJson;
@@ -119,11 +123,10 @@ export async function convertSub(
 
     let geoDomainMap: Record<string, string[]> = {};
 
-    const { clientType, clientPlatform, filter, dnsPolicy, disableQuic, logLevel } = options;
-
     // get fake-ip-filter for premium core
     const isPremium = clientCoreType(clientType) === ClientCoreType.ClashPremium;
     if (isPremium) {
+      const { extractGeoDomains } = await import("./geo/geoHelper");
       const geoStartTime = performance.now();
       geoDomainMap = await extractGeoDomains(env.geosite, ["private", "connectivity-check"]);
       const geoDuration = performance.now() - geoStartTime;
@@ -146,6 +149,7 @@ export async function convertSub(
       dnsPolicy,
       logLevel,
       filter,
+      landingProxies,
     });
 
     const stringifyStartTime = performance.now();
@@ -269,6 +273,11 @@ export async function getOrFetchSubContent(
       throw new JSONParseError(error instanceof Error ? error.message : "Unknown error");
     }
 
+    // KV 中的配置也可能由外部工具写入，读取时使用与 CLI 相同的校验。
+    if (subInfo.landingProxies !== undefined) {
+      subInfo.landingProxies = parseLandingProxies(subInfo.landingProxies);
+    }
+
     const curTokenConfigUpdatedAt = (tokenConfig.metadata as TokenConfigMetadata | null)?.updatedAt;
 
     // 解析缓存内容
@@ -279,7 +288,7 @@ export async function getOrFetchSubContent(
         const cached = JSON.parse(subCache.value) as CachedSubContent;
         const parseCachedDuration = performance.now() - parseCachedStartTime;
         console.log(`[Sub] Parse cached content: ${parseCachedDuration.toFixed(2)}ms`);
-        
+
         const curSubCacheUpdatedAt = (subCache.metadata as CacheMetadata | null)?.kvUpdatedAt;
 
         // Check if the subscription info is updated
