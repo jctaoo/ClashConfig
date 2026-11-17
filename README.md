@@ -111,6 +111,44 @@ https://clash.jctaoo.site/sk-your-token
   > https://github.com/MetaCubeX/ClashX.Meta/issues/103#issuecomment-2510050389
 - 其他客户端: 使用 tun 模式
 
+<a id="core-compatibility"></a>
+
+## 内核能力与当前适配范围
+
+下表按当前生成器的实际行为整理，区分内核能力、客户端差异和本项目尚未完成的适配。`strict`、`direct` 是本项目的 DNS 选项名称，不是客户端必须提供的同名配置键。
+
+### 客户端识别与输出分支
+
+| 客户端 / 内核 | 当前处理方式 |
+| --- | --- |
+| Mihomo，以及 Clash Verge、ClashX.Meta、Clash Meta for Android、Clash Party | 按 User-Agent 进入 Mihomo 配置分支；部分 TUN、控制面板设置还取决于客户端和平台 |
+| Stash | 单独识别并使用 Stash DNS 配置；代码内部将其归入 `ClientCoreType.ClashPremium`，这是生成器的分类名称，不表示 Stash 就是原版 Clash Premium |
+| 原版旧 Clash、原版 Clash Premium | 没有独立的识别与兼容分支。未知但以 `clash` 开头的 User-Agent 会被归入 `UnknownClash`，继而按 Mihomo 生成；请求被接受不代表生成配置与旧内核兼容 |
+
+### 使用中的能力及差异
+
+| 功能 / 配置 | 当前项目行为 | 能力范围与适配边界 |
+| --- | --- | --- |
+| 落地代理：`dialer-proxy` | Mihomo 和 Stash 共用 SOCKS5 落地节点与独立选择组，前置引用机场地区组；Stash 分支同时为落地域名生成 DNS 策略，并移除生成的 SVG 图标 | [Mihomo 支持](https://wiki.metacubex.one/config/proxies/dialer-proxy/)；[Stash 支持节点或策略组作为前置](https://stash.wiki/proxy-protocols/dialer-proxy)，要求 iOS/tvOS 3.2.5+、macOS 4.1+。服务按 User-Agent 识别客户端，未校验版本；Stash 配置生成与 Token 路由已覆盖测试，尚未实机验证出口连通性 |
+| `strict` DNS 方案：境外默认 DNS、国内域名分流及直连出口 DNS | Mihomo 分支输出 `direct-nameserver`、`direct-nameserver-follow-policy` 和国内集合的 `nameserver-policy`；Stash 分支目前固定使用国内 DNS | 这是当前生成器两套方案的差异。Mihomo 的字段含义见 [DNS 文档](https://wiki.metacubex.one/config/dns/)；不能仅据本项目的回退处理断言 Stash 无法实现类似 DNS 分流 |
+| DNS 查询跟随路由 | Mihomo 使用 `respect-rules: true`；Stash 使用 `follow-rule: true` | 两者均有相应能力，字段不同，分别见 [Mihomo DNS](https://wiki.metacubex.one/config/dns/) 与 [Stash DNS](https://stash.wiki/features/dns-server)；不能把 `respect-rules` 这个字段名等同于所有客户端的通用格式 |
+| 代理服务器域名的专用 DNS | Mihomo 输出 `proxy-server-nameserver`；Stash 分支目前把每个代理服务器域名加入 `nameserver-policy` | [现行 Stash 文档](https://stash.wiki/features/dns-server) 已列出 `proxy-server-nameserver`，要求 iOS/tvOS 3.6+、macOS 4.3+。项目尚未按这些版本切换为该字段 |
+| DNS 的 `geosite:` 集合引用 | Mihomo 在 `fake-ip-filter`、`nameserver-policy` 中直接引用集合；Stash 分支读取 geosite 数据中的 `private`、`connectivity-check` 并展开域名条目 | [现行 Stash 文档](https://stash.wiki/features/dns-server) 也支持这些 DNS 集合引用。当前展开属于保留的适配方式，不应写成所有 Stash 版本都不支持 `geosite:`；这里也没有展开路由中的全部 `GEOSITE` 规则 |
+| 路由中的 `GEOSITE`、`AND`、`NOT` | 两个分支共用规则生成器，直接保留域名集合规则和逻辑规则 | [Mihomo 路由文档](https://wiki.metacubex.one/config/rules/) 和 [Stash 规则文档](https://stash.wiki/rules/rule-types) 均列出这些规则能力。这些规则没有转换为旧 Clash 的兼容格式 |
+| QUIC 拦截中的 `NETWORK,UDP` | 启用禁用 QUIC 选项时，两个分支都输出包含 `DST-PORT,443`、`NETWORK,UDP` 和 `GEOSITE`/`GEOIP` 的组合规则 | 规则按 Mihomo 语法生成。[Stash 文档的 QUIC 示例](https://stash.wiki/rules/rule-types) 使用 `SCRIPT` 判断 `network` 和 `dst_port`；本项目没有转成该写法，尚未确认现有组合规则在 Stash 上的兼容性 |
+| `RULE-SET` 与远程 `rule-providers` | 两个分支均输出，使用 `domain`、`ipcidr`、`classical` 类型的规则集 | Mihomo 和 Stash 均有规则集合能力；[旧 Clash 历史文档](https://en.clash.wiki/premium/rule-providers.html) 将其列为 Premium 功能，不能把当前生成配置视为兼容旧开源 Clash |
+| 自动组的 `include-all` | 延迟选优、故障转移和两种负载均衡使用 `include-all: true`，启用落地后也会纳入落地节点；落地的前置地区组只包含筛选后的机场节点 | [Mihomo](https://wiki.metacubex.one/config/proxy-groups/) 和 [现行 Stash](https://stash.wiki/proxy-protocols/proxy-groups) 均支持该字段，并非 Mihomo 独有。项目没有为旧 Clash/Premium 生成相应兼容配置 |
+| Mihomo 扩展的全局配置 | 通用生成器输出 `geodata-mode`、`geodata-loader`、`geox-url`、`geo-auto-update`、`geo-update-interval`、`unified-delay`、`tcp-concurrent` | 这些字段按 [Mihomo 全局配置](https://wiki.metacubex.one/config/general/) 的格式和语义设置。目前 Stash 分支也会收到这些字段，但没有逐项转换；不能据此认定其他内核会按同样语义生效 |
+| 策略组 SVG 图标 | Mihomo 分支保留 SVG `icon`；Stash 分支删除生成的 SVG 图标 | 这是客户端显示适配。[Stash 图标文档](https://stash.wiki/configuration/proxy-group-icon) 列出的格式为 JPG、PNG；本项目没有生成对应的替代图片 |
+| 自动补充 TUN 配置 | ClashX.Meta 写入 macOS 的 `utun6`、`gVisor` 等配置；Windows 裸 Mihomo 写入 `Mihomo` 设备、`gvisor`、自动路由和严格路由等配置；其他客户端没有这个自动补充分支 | 属于客户端和平台差异。TUN 本身并非 Mihomo 独有，旧 Clash Premium 的 [历史功能列表](https://en.clash.wiki/premium/introduction.html) 也包含 TUN；当前项目没有为所有客户端生成统一 TUN 配置 |
+| 裸核心控制接口与面板 | 识别为裸 Mihomo 时，补充 `external-controller`、`external-ui`、`external-ui-url`、`external-ui-name` 和 `external-controller-cors`，使用 zashboard | 当前自动配置面向裸 Mihomo。外部控制接口这个概念不等于 Mihomo 独有；具体面板下载和 CORS 字段按 [Mihomo 全局配置](https://wiki.metacubex.one/config/general/) 生成 |
+
+### 旧 Clash 的链式代理
+
+[旧 Clash 的历史出站文档](https://en.clash.wiki/configuration/outbound.html#relay) 描述了 `type: relay` 策略组，流量按节点列表顺序转发，并注明不支持 UDP。本项目落地功能只生成节点上的 `dialer-proxy`，没有输出旧 Clash 的 `relay` 兼容配置。因此，“旧 Clash 能做链式代理”与“能直接使用本项目当前生成的落地配置”是两件事。
+
+地区、倍率与名称过滤，Token/KV 管理，以及 URL 参数解析，属于本服务自身的能力，不是某个代理内核的专属功能。机场节点配置主要沿用上游订阅，本服务不会把节点协议转换成另一个内核支持的协议。
+
 <a id="deploy"></a>
 
 ## ☁️ 部署
@@ -197,7 +235,7 @@ pnpm run cli list
 
 ### Token 落地代理
 
-Token 配置支持可选的 `landingProxies` 数组。运行 `pnpm run cli update sk-your-token`，在现有 JSON 中加入以下字段；`pnpm run cli add` 也可以选择通过编辑器配置落地数组。
+Mihomo 和 Stash 均可通过 Token 配置中的可选 `landingProxies` 数组使用落地代理。Stash 的版本要求见 [内核能力与当前适配范围](#core-compatibility)。运行 `pnpm run cli update sk-your-token`，在现有 JSON 中加入以下字段；`pnpm run cli add` 也可以选择通过编辑器配置落地数组。
 
 ```json
 {
@@ -223,14 +261,14 @@ Token 配置支持可选的 `landingProxies` 数组。运行 `pnpm run cli updat
 - `name` 是独立落地选择组的名称；对应节点名称自动生成为 `${name}节点`，两者都不能与已有节点或策略组重名。
 - `viaRegion` 是前置机场地区，支持 `hk`、`mo`、`jp`、`tw`、`sg`、`us`、`gb`、`de`、`fr`、`nl`、`kr`、`au`、`ca`，大小写均可。前置地区仍须满足 Token 的地区、倍率和名称过滤条件；筛选后为空会返回配置错误。
 - 首版落地协议为 `socks5`，`server` 支持域名或 IP，`port` 必须为 1–65535 的整数；`username`、`password` 可选。`udp` 默认关闭，启用后还需前置节点与落地服务共同支持 UDP。
-- 多个落地分别生成独立选择组，加入国外媒体、AI、Google AI、Bybit、PikPak、电报、谷歌、苹果、微软九个业务组。更新订阅后，在 Mihomo 面板中为需要的业务选择落地组；原来的默认选项顺序保持不变。
+- 多个落地分别生成独立选择组，加入国外媒体、AI、Google AI、Bybit、PikPak、电报、谷歌、苹果、微软九个业务组。更新订阅后，在客户端中为需要的业务选择落地组；原来的默认选项顺序保持不变。
 - 示例链路为：`本机 → 香港机场节点 → 新加坡 SOCKS5 落地 → 目标网站`。具体香港前置节点在“🇭🇰 香港节点”组中选择。
-- 启用落地后，延迟选优、故障转移和负载均衡仅使用筛选后的机场节点，落地节点不进入普通地区组或自动策略候选。
-- 删除 `landingProxies` 字段或设为 `[]` 可停用。当前服务对带落地的 Token 有客户端限制，详见 [内核能力与当前适配范围](#core-compatibility)。
+- 启用落地后，延迟选优、故障转移和负载均衡会同时纳入机场节点与落地节点。落地节点不进入普通地区组，前置地区组仍只包含筛选后的机场节点。
+- 删除 `landingProxies` 字段或设为 `[]` 可停用。Mihomo 和 Stash 使用相同的落地配置格式，无需为客户端分别维护 Token 配置。
 
 落地配置仅通过 Token 管理，`/sub` 的 URL 参数和网页表单不提供此入口。持有 Token 订阅链接的人可以获取包含落地凭据的生成配置。
 
-实现使用 Mihomo 的 [`dialer-proxy`](https://wiki.metacubex.one/config/proxies/dialer-proxy/) 和 [SOCKS5 出站配置](https://wiki.metacubex.one/config/proxies/socks/)。
+实现使用 Mihomo 与 Stash 均支持的节点级 `dialer-proxy`，分别参见 [Mihomo 代理链](https://wiki.metacubex.one/config/proxies/dialer-proxy/)、[Mihomo SOCKS5 出站配置](https://wiki.metacubex.one/config/proxies/socks/) 与 [Stash 代理链](https://stash.wiki/proxy-protocols/dialer-proxy)。
 
 ### 示例：完整工作流
 
@@ -331,7 +369,7 @@ pnpm run cli delete sk-your-token
 
 ### 本地测试
 
-测试使用 Vitest 在 Node.js 环境中运行。`vitest.config.ts` 将 `cloudflare:workers` 映射为内存 KV 替身，用于验证配置生成和 Token 路由逻辑；测试不访问远端 KV 或订阅，也不在 workerd 中执行。
+测试使用 Vitest 在 Node.js 环境中运行。`vitest.config.ts` 将 `cloudflare:workers` 映射为内存 KV 替身；Stash 路由测试中的 geosite 域名提取使用固定数据替代。测试用于验证配置生成和 Token 路由逻辑，不访问远端 KV 或订阅，也不在 workerd 中执行。
 
 ```bash
 pnpm test
