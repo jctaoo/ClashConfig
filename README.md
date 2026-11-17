@@ -18,10 +18,10 @@
 
 ## ⚡ 快速开始
 
-打开 [https://clash.jctaoo.site](https://clash.jctaoo.site) 来使用, 或者将原始订阅链接转换为 base64 编码后，直接使用下面的链接作为订阅 URL
+打开 [https://clash.jctaoo.com](https://clash.jctaoo.com) 来使用, 或者将原始订阅链接转换为 base64 编码后，直接使用下面的链接作为订阅 URL
 
 ```txt
-https://clash.jctaoo.site/sub?sub=<base64-encoded-url>
+https://clash.jctaoo.com/sub?sub=<base64-encoded-url>
 ```
 
 > 更进一步，可以使用基于 token 管理的配置获取 API，支持筛选节点等功能，参考下方 API 指南
@@ -78,8 +78,8 @@ Use tags: with_gvisor
 **使用示例**:
 
 ```txt
-https://clash.jctaoo.site/sub?sub=<base64-encoded-url>
-https://clash.jctaoo.site/sub?sub=<base64-encoded-url>&convert=false
+https://clash.jctaoo.com/sub?sub=<base64-encoded-url>
+https://clash.jctaoo.com/sub?sub=<base64-encoded-url>&convert=false
 ```
 
 ### 2. `/:token` - Token 订阅
@@ -95,12 +95,12 @@ https://clash.jctaoo.site/sub?sub=<base64-encoded-url>&convert=false
 **使用示例**:
 
 ``` txt
-https://clash.jctaoo.site/sk-your-token
+https://clash.jctaoo.com/sk-your-token
 ```
 
 **使用流程**:
 1. 使用 `pnpm run cli add` 添加订阅并获取 token
-2. 将 token 添加到 Clash 订阅地址: `https://clash.jctaoo.site/sk-your-token`
+2. 将 token 添加到 Clash 订阅地址: `https://clash.jctaoo.com/sk-your-token`
 3. 使用 CLI 工具管理和更新订阅配置
 
 ## 💡 客户端说明
@@ -146,7 +146,7 @@ pnpm run cli get sk-your-token
 #### 3. 获取订阅链接
 
 ```bash
-# 使用默认 base-url (https://clash.jctaoo.site)
+# 使用默认 base-url (https://clash.jctaoo.com)
 pnpm run cli link sk-your-token
 
 # 获取链接并自动在 Clash 中打开
@@ -164,7 +164,7 @@ pnpm run cli link sk-your-token -b https://your-worker.workers.dev -g
 该命令会生成完整的订阅链接。使用 `--go`/`-g` 参数可以自动生成 Clash URL scheme 并打开 Clash 客户端导入配置。
 
 **参数说明：**
-- `--base-url` / `-b`: Worker 部署的 base URL（默认：`https://clash.jctaoo.site`）
+- `--base-url` / `-b`: Worker 部署的 base URL（默认：`https://clash.jctaoo.com`）
 - `--go` / `-g`: 生成 Clash URL scheme 并自动打开（支持 Windows/macOS/Linux）
 
 #### 4. 更新订阅（使用编辑器）

@@ -469,7 +469,7 @@ yargs(hideBin(process.argv))
           alias: "b",
           describe: "Base URL of your deployed worker",
           type: "string",
-          default: "https://clash.jctaoo.site",
+          default: "https://clash.jctaoo.com",
         })
         .option("go", {
           alias: "g",
